@@ -2,6 +2,7 @@ import { Module, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { JwtService } from '@nestjs/jwt';
 import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
@@ -28,8 +29,15 @@ import { SeedModule } from './seed/seed.module';
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       sortSchema: true,
-      playground: true,
+      playground: false,
       csrfPrevention: false,
+      plugins: [
+        ApolloServerPluginLandingPageLocalDefault({
+          embed: true,
+          includeCookies: true,
+        }),
+      ],
+      includeStacktraceInErrorResponses: false,
       context: ({ req }: any) => {
         const authorization =
           req?.headers?.authorization ||

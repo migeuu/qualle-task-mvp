@@ -1,0 +1,213 @@
+# ============================================================
+#  Qualle Task - GraphQL Playground Operations
+#  Copie e cole cada bloco no Apollo Sandbox
+#  Endpoint: http://localhost:3000/graphql
+# ============================================================
+#
+#  ANTES DE COMEÇAR:
+#  - Para operações autenticadas, adicione o header no Sandbox:
+#    { "Authorization": "Bearer <seu-token>" }
+#  - Para subscriptions, configure o connectionParams:
+#    { "Authorization": "Bearer <seu-token>" }
+#
+# ============================================================
+#  SEED (público - não precisa de token)
+# ============================================================
+
+mutation FillSeed {
+  fillSeed {
+    message
+    usersCreated
+    tasksCreated
+  }
+}
+
+# ============================================================
+#  AUTH (público)
+# ============================================================
+
+mutation Register {
+  register(input: { email: "teste@qualle.com", password: "123456", name: "Teste" }) {
+    accessToken
+    user { id email name }
+  }
+}
+
+mutation LoginAlice {
+  login(input: { email: "alice@qualle.com", password: "123456" }) {
+    accessToken
+    user { id email name }
+  }
+}
+
+mutation LoginBruno {
+  login(input: { email: "bruno@qualle.com", password: "123456" }) {
+    accessToken
+    user { id email name }
+  }
+}
+
+# ============================================================
+#  PERFIL (autenticado)
+# ============================================================
+
+query Me {
+  me { id email name createdAt }
+}
+
+# ============================================================
+#  TAREFAS - Queries (autenticado)
+# ============================================================
+
+# Listar todas as tarefas (com paginação)
+query ListTasks {
+  tasks(pagination: { page: 1, limit: 20 }) {
+    items {
+      id
+      title
+      description
+      status
+      priority
+      dueDate
+      creator { id name }
+      assignees { id name }
+    }
+    total
+  }
+}
+
+# Filtrar por status e prioridade
+query ListTasksFiltered {
+  tasks(
+    filter: { status: TODO, priority: HIGH }
+    pagination: { page: 1, limit: 10 }
+  ) {
+    items { id title status priority }
+    total
+  }
+}
+
+# Detalhes de uma tarefa (substitua o ID)
+query GetTask {
+  task(id: "uuid-da-tarefa") {
+    id title description status priority dueDate
+    creator { id name email }
+    assignees { id name email }
+    comments { id content author { name } createdAt }
+  }
+}
+
+# ============================================================
+#  TAREFAS - Mutations (autenticado)
+# ============================================================
+
+mutation CreateTask {
+  createTask(input: {
+    title: "Revisar PR do frontend"
+    description: "Verificar acessibilidade e responsividade"
+    priority: HIGH
+    status: TODO
+  }) {
+    id title status priority
+    creator { name }
+  }
+}
+
+mutation UpdateTask {
+  updateTask(input: {
+    id: "uuid-da-tarefa"
+    title: "Título atualizado"
+    status: IN_PROGRESS
+  }) {
+    id title status
+  }
+}
+
+mutation DeleteTask {
+  deleteTask(id: "uuid-da-tarefa")
+}
+
+mutation AssignTask {
+  assignTask(input: {
+    taskId: "uuid-da-tarefa"
+    userId: "uuid-do-usuario"
+  }) {
+    id assignees { id name email }
+  }
+}
+
+# ============================================================
+#  COMENTÁRIOS (autenticado)
+# ============================================================
+
+mutation AddComment {
+  addComment(input: {
+    taskId: "uuid-da-tarefa"
+    content: "Fiz a revisão, tem alguns pontos pra ajustar"
+  }) {
+    id content
+    author { name }
+    task { id title }
+  }
+}
+
+# ============================================================
+#  SUBSCRIPTIONS (Real-time via WebSocket)
+# ============================================================
+#
+#  IMPORTANTE: Para testar subscriptions, abra DUAS abas:
+#  Aba 1: Execute uma subscription (ex: taskUpdated)
+#  Aba 2: Faça login e execute uma mutation (ex: updateTask)
+#  Resultado: A Aba 1 receberá o evento em tempo real
+#
+#  No Apollo Sandbox, configure o connectionParams:
+#  Settings > Connection Settings > Add header
+#  { "Authorization": "Bearer <seu-token>" }
+
+subscription TaskUpdated {
+  taskUpdated {
+    taskUpdated {
+      id
+      title
+      status
+      priority
+    }
+  }
+}
+
+subscription TaskAssigned {
+  taskAssigned {
+    taskAssigned {
+      id
+      title
+      assignees { id name }
+    }
+  }
+}
+
+subscription NewComment {
+  newComment {
+    newComment {
+      id
+      content
+      author { name }
+      task { id title }
+    }
+  }
+}
+
+# ============================================================
+#  FLUXO COMPLETO DE TESTE (passo a passo)
+# ============================================================
+#
+# 1. Execute FillSeed (se banco vazio)
+# 2. Faça LoginAlice para obter o token
+# 3. Copie o accessToken e configure no header:
+#    { "Authorization": "Bearer <token>" }
+# 4. Execute ListTasks para ver as tarefas do seed
+# 5. Copie um ID de tarefa e teste UpdateTask / DeleteTask
+# 6. Execute CreateTask para criar uma nova
+# 7. Teste AssignTask com outro usuário (ex: LoginBruno pega o ID)
+# 8. Adicione comentários com AddComment
+# 9. Para real-time: abra outra aba, execute TaskUpdated,
+#    volte na aba principal e rode UpdateTask

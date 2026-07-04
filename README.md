@@ -51,6 +51,8 @@ Com o backend rodando, você tem três formas de interagir com a aplicação:
 |---|---|---|
 | **Swagger (REST API Docs)** | http://localhost:3000/api/docs | Documentação OpenAPI, testar endpoints REST, consumo via HTTP |
 | **GraphQL Playground** | http://localhost:3000/graphql | Testar queries, mutations e subscriptions, consumo do frontend |
+
+> Todas as operações prontas para copiar e colar estão em [`backend/playground-ops.graphql`](backend/playground-ops.graphql).
 | **Frontend SPA** | http://localhost:5173 | Testes visuais da interface, fluxo completo do usuário |
 
 > Para mais detalhes sobre arquitetura, testes e exemplos, veja [`backend/README.md`](backend/README.md).
