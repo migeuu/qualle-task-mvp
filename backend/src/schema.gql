@@ -1,0 +1,153 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+input AssignTaskInput {
+  taskId: ID!
+  userId: ID!
+}
+
+type AuthPayload {
+  accessToken: String!
+  user: User!
+}
+
+type Comment {
+  author: User!
+  content: String!
+  createdAt: DateTime!
+  id: ID!
+  task: Task!
+  updatedAt: DateTime!
+}
+
+input CreateCommentInput {
+  content: String!
+  taskId: ID!
+}
+
+input CreateTaskInput {
+  description: String
+  dueDate: DateTime
+  priority: TaskPriority = MEDIUM
+  status: TaskStatus = TODO
+  title: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type Mutation {
+  addComment(input: CreateCommentInput!): Comment!
+  assignTask(input: AssignTaskInput!): Task!
+  createTask(input: CreateTaskInput!): Task!
+  deleteTask(id: ID!): Boolean!
+  fillSeed: SeedResult!
+  login(input: LoginInput!): AuthPayload!
+  register(input: RegisterInput!): AuthPayload!
+  updateTask(input: UpdateTaskInput!): Task!
+}
+
+type NewCommentPayload {
+  newComment: Comment!
+}
+
+input PaginationInput {
+  limit: Int = 10
+  page: Int = 1
+}
+
+type Query {
+  me: User!
+  task(id: ID!): Task!
+  tasks(filter: TaskFilterInput, pagination: PaginationInput): TaskPage!
+  users: [User!]!
+}
+
+input RegisterInput {
+  email: String!
+  name: String!
+  password: String!
+}
+
+type SeedResult {
+  message: String!
+  tasksCreated: Int!
+  usersCreated: Int!
+}
+
+type Subscription {
+  newComment: NewCommentPayload!
+  taskAssigned: TaskAssignedPayload!
+  taskUpdated: TaskUpdatedPayload!
+}
+
+type Task {
+  assignees: [User!]!
+  comments: [Comment!]!
+  createdAt: DateTime!
+  creator: User!
+  description: String
+  dueDate: DateTime
+  id: ID!
+  priority: TaskPriority!
+  status: TaskStatus!
+  title: String!
+  updatedAt: DateTime!
+}
+
+type TaskAssignedPayload {
+  taskAssigned: Task!
+}
+
+input TaskFilterInput {
+  dueDate: DateTime
+  priority: TaskPriority
+  status: TaskStatus
+}
+
+type TaskPage {
+  items: [Task!]!
+  total: Int!
+}
+
+enum TaskPriority {
+  HIGH
+  LOW
+  MEDIUM
+}
+
+enum TaskStatus {
+  CANCELLED
+  DONE
+  IN_PROGRESS
+  TODO
+}
+
+type TaskUpdatedPayload {
+  taskUpdated: Task!
+}
+
+input UpdateTaskInput {
+  description: String
+  dueDate: DateTime
+  id: ID!
+  priority: TaskPriority
+  status: TaskStatus
+  title: String
+}
+
+type User {
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  name: String!
+  updatedAt: DateTime!
+}
