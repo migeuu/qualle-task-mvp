@@ -43,8 +43,14 @@ curl -X POST http://localhost:3000/seed
 
 Isso popula o banco com 4 usuários (senha: `123456`) e 10 tarefas de demonstração.
 
-## Documentação adicional
+## Interfaces disponíveis
 
-- **GraphQL Playground**: http://localhost:3000/graphql
-- **Swagger (REST)**: http://localhost:3000/api/docs
-- **Backend README**: [`backend/README.md`](backend/README.md) — arquitetura, testes, subscriptions e exemplos completos
+Com o backend rodando, você tem três formas de interagir com a aplicação:
+
+| Interface | URL | Para quê |
+|---|---|---|
+| **Swagger (REST API Docs)** | http://localhost:3000/api/docs | Documentação OpenAPI, testar endpoints REST, consumo via HTTP |
+| **GraphQL Playground** | http://localhost:3000/graphql | Testar queries, mutations e subscriptions, consumo do frontend |
+| **Frontend SPA** | http://localhost:5173 | Testes visuais da interface, fluxo completo do usuário |
+
+> Para mais detalhes sobre arquitetura, testes e exemplos, veja [`backend/README.md`](backend/README.md).
