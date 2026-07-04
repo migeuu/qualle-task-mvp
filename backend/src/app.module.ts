@@ -28,7 +28,8 @@ import { SeedModule } from './seed/seed.module';
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       sortSchema: true,
-      playground: false,
+      playground: true,
+      csrfPrevention: false,
       context: ({ req }: any) => {
         const authorization =
           req?.headers?.authorization ||
