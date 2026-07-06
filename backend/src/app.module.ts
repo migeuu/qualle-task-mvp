@@ -5,10 +5,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { JwtService } from '@nestjs/jwt';
 import { join } from 'path';
-import { AuthModule } from './auth/auth.module';
-import { TasksModule } from './tasks/tasks.module';
-import { CommentsModule } from './comments/comments.module';
-import { EventsModule } from './events/events.module';
+import { CoreModule } from './modules/core/core.module';
 import { GatewayModule } from './gateway/gateway.module';
 import { SeedModule } from './seed/seed.module';
 
@@ -21,7 +18,7 @@ import { SeedModule } from './seed/seed.module';
       username: process.env.DB_USERNAME!,
       password: process.env.DB_PASSWORD!,
       database: process.env.DB_DATABASE!,
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      entities: [__dirname + '/**/*.typeorm-entity{.ts,.js}'],
       synchronize: process.env.DB_SYNCHRONIZE === 'true',
       logging: process.env.DB_LOGGING === 'true',
     }),
@@ -66,12 +63,9 @@ import { SeedModule } from './seed/seed.module';
         },
       },
     }),
-    EventsModule,
+    CoreModule,
     GatewayModule,
     SeedModule,
-    AuthModule,
-    TasksModule,
-    CommentsModule,
   ],
 })
 export class AppModule {}

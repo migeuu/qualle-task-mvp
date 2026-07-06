@@ -11,7 +11,7 @@ import { Server, Socket } from 'socket.io';
 import { OnEvent } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 import { Injectable, Logger } from '@nestjs/common';
-import { EVENTS } from '../events/event.constants';
+import { TaskEventVO } from '../modules/core/domain/value-objects/task-event.vo';
 
 export interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -64,35 +64,45 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { event: 'pong', data, userId: client.userId };
   }
 
-  // Listener: Task Updated -> emite para usuarios relevantes
-  @OnEvent(EVENTS.TASK_UPDATED)
-  handleTaskUpdated(payload: { task: unknown; userIds: string[] }) {
-    payload.userIds.forEach((userId) => {
-      this.server.to(`user:${userId}`).emit('task.update', payload.task);
+  @OnEvent('task.updated')
+  handleTaskUpdated(event: TaskEventVO) {
+    event.affectedUserIds.forEach((userId) => {
+      this.server.to(`user:${userId}`).emit('task.update', {
+        taskId: event.taskId,
+        eventAuthorId: event.eventAuthorId,
+        eventType: event.eventType,
+      });
     });
   }
 
-  // Listener: Task Assigned -> emite para usuarios relevantes
-  @OnEvent(EVENTS.TASK_ASSIGNED)
-  handleTaskAssigned(payload: { task: unknown; userIds: string[] }) {
-    payload.userIds.forEach((userId) => {
-      this.server.to(`user:${userId}`).emit('task.update', payload.task);
+  @OnEvent('task.assigned')
+  handleTaskAssigned(event: TaskEventVO) {
+    event.affectedUserIds.forEach((userId) => {
+      this.server.to(`user:${userId}`).emit('task.update', {
+        taskId: event.taskId,
+        eventAuthorId: event.eventAuthorId,
+        eventType: event.eventType,
+      });
     });
   }
 
-  // Listener: New Comment -> emite para usuarios relevantes
-  @OnEvent(EVENTS.NEW_COMMENT)
-  handleNewComment(payload: { comment: unknown; userIds: string[] }) {
-    payload.userIds.forEach((userId) => {
-      this.server.to(`user:${userId}`).emit('task.update', payload.comment);
+  @OnEvent('task.newComment')
+  handleNewComment(event: TaskEventVO) {
+    event.affectedUserIds.forEach((userId) => {
+      this.server.to(`user:${userId}`).emit('task.update', {
+        taskId: event.taskId,
+        eventAuthorId: event.eventAuthorId,
+        eventType: event.eventType,
+      });
     });
   }
 
-  // Listener: Notificacoes individuais
-  @OnEvent(EVENTS.NOTIFICATION)
-  handleNotification(payload: { userId: string; message: string }) {
+  @OnEvent('notification.*')
+  handleNotification(payload: { type: string; userId: string; payload: TaskEventVO }) {
     this.server.to(`user:${payload.userId}`).emit('notification', {
-      message: payload.message,
+      taskId: payload.payload.taskId,
+      eventAuthorId: payload.payload.eventAuthorId,
+      eventType: payload.payload.eventType,
       timestamp: new Date(),
     });
   }

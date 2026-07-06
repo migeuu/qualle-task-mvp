@@ -1,7 +1,7 @@
 import { TaskGateway, AuthenticatedSocket } from '../task.gateway';
 import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
-import { EVENTS } from '../../events/events.service';
+import { TaskEventVO } from '../../modules/core/domain/value-objects/task-event.vo';
 
 describe('TaskGateway', () => {
   let gateway: TaskGateway;
@@ -106,57 +106,63 @@ describe('TaskGateway', () => {
 
   describe('handleTaskUpdated', () => {
     it('should emit task.update to each relevant user room', () => {
-      const payload = {
-        task: { id: 'task-1', title: 'Updated' },
-        userIds: ['user-1', 'user-2'],
-      };
+      const event = new TaskEventVO('task-1', 'author-1', 'TASK_UPDATED', ['user-1', 'user-2']);
 
-      gateway.handleTaskUpdated(payload);
+      gateway.handleTaskUpdated(event);
 
       expect(mockServer.to).toHaveBeenCalledWith('user:user-1');
       expect(mockServer.to).toHaveBeenCalledWith('user:user-2');
       expect(mockServer.emit).toHaveBeenCalledTimes(2);
-      expect(mockServer.emit).toHaveBeenCalledWith('task.update', payload.task);
+      expect(mockServer.emit).toHaveBeenCalledWith('task.update', {
+        taskId: 'task-1',
+        eventAuthorId: 'author-1',
+        eventType: 'TASK_UPDATED',
+      });
     });
   });
 
   describe('handleTaskAssigned', () => {
     it('should emit task.update to each relevant user room', () => {
-      const payload = {
-        task: { id: 'task-1' },
-        userIds: ['user-3'],
-      };
+      const event = new TaskEventVO('task-1', 'author-1', 'TASK_ASSIGNED', ['user-3']);
 
-      gateway.handleTaskAssigned(payload);
+      gateway.handleTaskAssigned(event);
 
       expect(mockServer.to).toHaveBeenCalledWith('user:user-3');
-      expect(mockServer.emit).toHaveBeenCalledWith('task.update', payload.task);
+      expect(mockServer.emit).toHaveBeenCalledWith('task.update', {
+        taskId: 'task-1',
+        eventAuthorId: 'author-1',
+        eventType: 'TASK_ASSIGNED',
+      });
     });
   });
 
   describe('handleNewComment', () => {
     it('should emit task.update for new comment to relevant users', () => {
-      const payload = {
-        comment: { id: 'comment-1', content: 'Hello' },
-        userIds: ['user-1'],
-      };
+      const event = new TaskEventVO('task-1', 'author-1', 'TASK_NEW_COMMENT', ['user-1']);
 
-      gateway.handleNewComment(payload);
+      gateway.handleNewComment(event);
 
       expect(mockServer.to).toHaveBeenCalledWith('user:user-1');
-      expect(mockServer.emit).toHaveBeenCalledWith('task.update', payload.comment);
+      expect(mockServer.emit).toHaveBeenCalledWith('task.update', {
+        taskId: 'task-1',
+        eventAuthorId: 'author-1',
+        eventType: 'TASK_NEW_COMMENT',
+      });
     });
   });
 
   describe('handleNotification', () => {
     it('should emit notification to specific user with timestamp', () => {
-      const payload = { userId: 'user-1', message: 'You were assigned' };
+      const event = new TaskEventVO('task-1', 'author-1', 'TASK_ASSIGNED', ['user-1']);
+      const payload = { type: 'notification', userId: 'user-1', payload: event };
 
       gateway.handleNotification(payload);
 
       expect(mockServer.to).toHaveBeenCalledWith('user:user-1');
       expect(mockServer.emit).toHaveBeenCalledWith('notification', {
-        message: 'You were assigned',
+        taskId: 'task-1',
+        eventAuthorId: 'author-1',
+        eventType: 'TASK_ASSIGNED',
         timestamp: expect.any(Date),
       });
     });

@@ -2,9 +2,9 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../auth/domain/user.entity';
-import { Task } from '../tasks/domain/task.entity';
-import { TaskStatus, TaskPriority } from '../tasks/domain/task.enums';
+import { UserTypeormEntity } from '../modules/core/infra/orm/entities/user.typeorm-entity';
+import { TaskTypeormEntity } from '../modules/core/infra/orm/entities/task.typeorm-entity';
+import { TaskStatus, TaskPriority } from '../modules/core/domain/enums/task.enum';
 import { SeedResult } from './dto/seed-result.type';
 
 export class SeedAlreadyAppliedException extends HttpException {
@@ -32,10 +32,10 @@ interface SeedTask {
 @Injectable()
 export class SeedService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
-    @InjectRepository(Task)
-    private readonly taskRepo: Repository<Task>,
+    @InjectRepository(UserTypeormEntity)
+    private readonly userRepo: Repository<UserTypeormEntity>,
+    @InjectRepository(TaskTypeormEntity)
+    private readonly taskRepo: Repository<TaskTypeormEntity>,
   ) {}
 
   async execute(): Promise<SeedResult> {
@@ -55,7 +55,7 @@ export class SeedService {
     };
   }
 
-  private async createUsers(): Promise<User[]> {
+  private async createUsers(): Promise<UserTypeormEntity[]> {
     const seedUsers: SeedUser[] = [
       { name: 'Alice Oliveira', email: 'alice@qualle.com', password: '123456' },
       { name: 'Bruno Santos', email: 'bruno@qualle.com', password: '123456' },
@@ -63,7 +63,7 @@ export class SeedService {
       { name: 'Diego Ferreira', email: 'diego@qualle.com', password: '123456' },
     ];
 
-    const users: User[] = [];
+    const users: UserTypeormEntity[] = [];
 
     for (const su of seedUsers) {
       const hash = await bcrypt.hash(su.password, 10);
@@ -78,7 +78,7 @@ export class SeedService {
     return users;
   }
 
-  private async createTasks(users: User[]): Promise<Task[]> {
+  private async createTasks(users: UserTypeormEntity[]): Promise<TaskTypeormEntity[]> {
     const now = new Date();
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -174,7 +174,7 @@ export class SeedService {
       },
     ];
 
-    const tasks: Task[] = [];
+    const tasks: TaskTypeormEntity[] = [];
 
     for (const st of seedTasks) {
       const task = this.taskRepo.create({

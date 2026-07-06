@@ -1,0 +1,56 @@
+import { Injectable } from '@nestjs/common';
+import { v4 as uuid } from 'uuid';
+import { ITaskRepository } from '../../../domain/repositories/task.repository';
+import { IUserRepository } from '../../../domain/repositories/user.repository';
+import { ICommentRepository } from '../../../domain/repositories/comment.repository';
+import { ITaskEventBus } from '../../services/task-event-bus.service';
+import { Comment } from '../../../domain/entities/comment.entity';
+import { TaskDto } from '../../dtos/task.dto';
+import { TaskMapper } from '../../mappers/task.mapper';
+import { TaskEventVO } from '../../../domain/value-objects/task-event.vo';
+
+@Injectable()
+export class AddTaskCommentUseCase {
+  constructor(
+    private readonly taskRepo: ITaskRepository,
+    private readonly userRepo: IUserRepository,
+    private readonly commentRepo: ICommentRepository,
+    private readonly taskEventBus: ITaskEventBus,
+  ) {}
+
+  async execute(input: {
+    taskId: string;
+    userId: string;
+    content: string;
+  }): Promise<TaskDto> {
+    const task = await this.taskRepo.findByIdWithAssignees(input.taskId);
+    if (!task) {
+      throw new Error('Resource not found');
+    }
+
+    const author = await this.userRepo.findById(input.userId);
+    if (!author) {
+      throw new Error('Resource not found');
+    }
+
+    const comment = new Comment(
+      uuid(),
+      input.content,
+      input.taskId,
+      input.userId,
+      new Date(),
+      new Date(),
+    );
+
+    await this.commentRepo.create(comment);
+
+    const updatedTask = await this.taskRepo.findById(input.taskId);
+
+    const affectedUsers = [...new Set([task.creatorId, ...task.assigneeIds])];
+    this.taskEventBus.publish(
+      new TaskEventVO(input.taskId, input.userId, 'TASK_NEW_COMMENT', affectedUsers),
+    );
+
+    return TaskMapper.toDto(updatedTask!);
+  }
+}
