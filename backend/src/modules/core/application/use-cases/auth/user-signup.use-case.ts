@@ -1,11 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
+import { QueryFailedError } from 'typeorm';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { IHashService } from '../../services/hash.service';
 import { User } from '../../../domain/entities/user.entity';
+import { EmailAlreadyInUseException } from '../../../../../shared/exceptions/business.exceptions';
 
 @Injectable()
 export class UserSignupUseCase {
+  private readonly logger = new Logger(UserSignupUseCase.name);
+
   constructor(
     private readonly userRepo: IUserRepository,
     private readonly hashService: IHashService,
@@ -18,7 +22,7 @@ export class UserSignupUseCase {
   }): Promise<void> {
     const existing = await this.userRepo.findByEmail(input.email);
     if (existing) {
-      throw new Error('Email already in use');
+      throw new EmailAlreadyInUseException();
     }
 
     const hashedPassword = await this.hashService.hash(input.password);
@@ -32,6 +36,19 @@ export class UserSignupUseCase {
       new Date(),
     );
 
-    await this.userRepo.create(user);
+    try {
+      await this.userRepo.create(user);
+    } catch (err) {
+      if (
+        err instanceof QueryFailedError &&
+        err.driverError?.code === '23505'
+      ) {
+        this.logger.warn(
+          `Race condition caught: email ${input.email} already exists`,
+        );
+        throw new EmailAlreadyInUseException();
+      }
+      throw err;
+    }
   }
 }

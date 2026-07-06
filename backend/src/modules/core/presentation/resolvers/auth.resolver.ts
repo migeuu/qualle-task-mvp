@@ -1,6 +1,4 @@
 import { Resolver, Mutation, Query, Args } from '@nestjs/graphql';
-import { UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../../../../shared/guards/jwt-auth.guard';
 import { Public } from '../../../../shared/decorators/public.decorator';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator';
 import { UserSignupUseCase } from '../../application/use-cases/auth/user-signup.use-case';
@@ -36,7 +34,6 @@ export class AuthResolver {
     return this.loginUC.execute(input);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Query(() => UserTypeormEntity)
   async me(@CurrentUser() user: any): Promise<UserTypeormEntity> {
     const dto = await this.findUserDetailsUC.execute(user.sub);
@@ -44,7 +41,6 @@ export class AuthResolver {
     return found as unknown as UserTypeormEntity;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Query(() => [UserTypeormEntity])
   async users(
     @Args('input', { nullable: true })

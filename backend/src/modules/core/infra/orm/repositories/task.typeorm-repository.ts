@@ -46,6 +46,50 @@ export class TaskTypeormRepository implements ITaskRepository {
       .leftJoinAndSelect('task.comments', 'comments')
       .leftJoinAndSelect('comments.author', 'commentAuthor');
 
+    this.applyFilters(qb, filter);
+
+    qb.orderBy('task.createdAt', 'DESC');
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+    return { data: items.map((i) => this.toDomain(i)), total };
+  }
+
+  async findAllByParticipant(
+    userId: string,
+    page: number,
+    limit: number,
+    filter?: TaskFilterParams,
+  ): Promise<{ data: Task[]; total: number }> {
+    const subQuery = this.em
+      .createQueryBuilder()
+      .select('ta.taskId')
+      .from('task_assignees', 'ta')
+      .where('ta.userId = :userId', { userId });
+
+    const qb = this.em
+      .createQueryBuilder(TaskTypeormEntity, 'task')
+      .leftJoinAndSelect('task.creator', 'creator')
+      .leftJoinAndSelect('task.assignees', 'assignees')
+      .leftJoinAndSelect('task.comments', 'comments')
+      .leftJoinAndSelect('comments.author', 'commentAuthor')
+      .where('task.creatorId = :userId', { userId })
+      .orWhere(`task.id IN (${subQuery.getQuery()})`)
+      .setParameters(subQuery.getParameters());
+
+    this.applyFilters(qb, filter);
+
+    qb.orderBy('task.createdAt', 'DESC');
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+    return { data: items.map((i) => this.toDomain(i)), total };
+  }
+
+  private applyFilters(
+    qb: any,
+    filter?: TaskFilterParams,
+  ): void {
     if (filter?.status) {
       qb.andWhere('task.status = :status', { status: filter.status });
     }
@@ -55,12 +99,6 @@ export class TaskTypeormRepository implements ITaskRepository {
     if (filter?.dueDate) {
       qb.andWhere('task.dueDate = :dueDate', { dueDate: filter.dueDate });
     }
-
-    qb.orderBy('task.createdAt', 'DESC');
-    qb.skip((page - 1) * limit).take(limit);
-
-    const [items, total] = await qb.getManyAndCount();
-    return { data: items.map((i) => this.toDomain(i)), total };
   }
 
   async create(task: Task): Promise<Task> {

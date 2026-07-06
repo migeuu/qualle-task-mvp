@@ -4,7 +4,6 @@ import {
   Get,
   Body,
   Req,
-  UseGuards,
   Query,
 } from '@nestjs/common';
 import {
@@ -14,7 +13,6 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { Request } from 'express';
-import { JwtAuthGuard } from '../../../../shared/guards/jwt-auth.guard';
 import { Public } from '../../../../shared/decorators/public.decorator';
 import { UserSignupUseCase } from '../../application/use-cases/auth/user-signup.use-case';
 import { UserLoginUseCase } from '../../application/use-cases/auth/user-login.use-case';
@@ -56,7 +54,6 @@ export class AuthController {
     return this.loginUC.execute(input);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('me')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
@@ -65,7 +62,6 @@ export class AuthController {
     return this.findUserDetailsUC.execute(userId);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('users')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List all users (paginated)' })

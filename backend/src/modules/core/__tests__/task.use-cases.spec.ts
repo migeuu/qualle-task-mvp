@@ -72,7 +72,7 @@ describe('CreateTaskUseCase', () => {
 
     await expect(
       useCase.execute({ creatorId: 'nonexistent', title: 'Task' }),
-    ).rejects.toThrow('Resource not found');
+    ).rejects.toThrow('User not found');
   });
 
   it('should create a task with custom status and priority', async () => {
@@ -277,7 +277,7 @@ describe('AssignTaskUseCase', () => {
         loggedUserId: 'user-1',
         assigneeIds: ['nonexistent'],
       }),
-    ).rejects.toThrow('Resource not found');
+    ).rejects.toThrow('User not found');
   });
 });
 
@@ -346,7 +346,7 @@ describe('AddTaskCommentUseCase', () => {
         userId: 'nonexistent',
         content: 'Test',
       }),
-    ).rejects.toThrow('Resource not found');
+    ).rejects.toThrow('User not found');
   });
 
   it('should publish event with affected users', async () => {
@@ -391,9 +391,7 @@ describe('FindTaskDetailsUseCase', () => {
   it('should throw when task not found', async () => {
     mockTaskRepo.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('nonexistent')).rejects.toThrow(
-      'Resource not found',
-    );
+    await expect(useCase.execute('nonexistent')).rejects.toThrow('Task not found');
   });
 });
 

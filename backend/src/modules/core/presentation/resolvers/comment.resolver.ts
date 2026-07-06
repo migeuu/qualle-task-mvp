@@ -1,6 +1,4 @@
 import { Resolver, Mutation, Args } from '@nestjs/graphql';
-import { UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../../../../shared/guards/jwt-auth.guard';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator';
 import { AddTaskCommentUseCase } from '../../application/use-cases/task/add-task-comment.use-case';
 import { TaskTypeormRepository } from '../../infra/orm/repositories/task.typeorm-repository';
@@ -14,7 +12,6 @@ export class CommentResolver {
     private readonly taskRepo: TaskTypeormRepository,
   ) {}
 
-  @UseGuards(JwtAuthGuard)
   @Mutation(() => TaskTypeormEntity)
   async addComment(
     @Args('input') input: CreateCommentInput,

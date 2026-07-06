@@ -6,6 +6,7 @@ import {
   SubscribeMessage,
   MessageBody,
   ConnectedSocket,
+  WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { OnEvent } from '@nestjs/event-emitter';
@@ -36,6 +37,8 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.handshake.auth?.token || client.handshake.query?.token;
 
       if (!token) {
+        this.logger.warn('WebSocket connection rejected: missing token');
+        this.emitError(client, 'Authentication token is required');
         client.disconnect();
         return;
       }
@@ -46,13 +49,17 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.userId = payload.sub;
       client.join(`user:${payload.sub}`);
       this.logger.log(`Client connected: ${client.userId}`);
-    } catch {
+    } catch (err) {
+      this.logger.warn(
+        `WebSocket connection rejected: ${err instanceof Error ? err.message : 'Invalid token'}`,
+      );
+      this.emitError(client, 'Invalid authentication token');
       client.disconnect();
     }
   }
 
   handleDisconnect(client: AuthenticatedSocket) {
-    this.logger.log(`Client disconnected: ${client.userId}`);
+    this.logger.log(`Client disconnected: ${client.userId || 'unauthenticated'}`);
   }
 
   @SubscribeMessage('ping')
@@ -60,40 +67,25 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: unknown,
   ) {
+    if (!client.userId) {
+      return { event: 'error', message: 'Not authenticated' };
+    }
     return { event: 'pong', data, userId: client.userId };
   }
 
   @OnEvent('task.updated')
   handleTaskUpdated(event: TaskEventVO) {
-    event.affectedUserIds.forEach((userId) => {
-      this.server.to(`user:${userId}`).emit('task.update', {
-        taskId: event.taskId,
-        eventAuthorId: event.eventAuthorId,
-        eventType: event.eventType,
-      });
-    });
+    this.emitToAffectedUsers(event);
   }
 
   @OnEvent('task.assigned')
   handleTaskAssigned(event: TaskEventVO) {
-    event.affectedUserIds.forEach((userId) => {
-      this.server.to(`user:${userId}`).emit('task.update', {
-        taskId: event.taskId,
-        eventAuthorId: event.eventAuthorId,
-        eventType: event.eventType,
-      });
-    });
+    this.emitToAffectedUsers(event);
   }
 
   @OnEvent('task.newComment')
   handleNewComment(event: TaskEventVO) {
-    event.affectedUserIds.forEach((userId) => {
-      this.server.to(`user:${userId}`).emit('task.update', {
-        taskId: event.taskId,
-        eventAuthorId: event.eventAuthorId,
-        eventType: event.eventType,
-      });
-    });
+    this.emitToAffectedUsers(event);
   }
 
   @OnEvent('notification.*')
@@ -102,11 +94,43 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
     userId: string;
     payload: TaskEventVO;
   }) {
-    this.server.to(`user:${payload.userId}`).emit('notification', {
-      taskId: payload.payload.taskId,
-      eventAuthorId: payload.payload.eventAuthorId,
-      eventType: payload.payload.eventType,
-      timestamp: new Date(),
-    });
+    try {
+      this.server.to(`user:${payload.userId}`).emit('notification', {
+        taskId: payload.payload.taskId,
+        eventAuthorId: payload.payload.eventAuthorId,
+        eventType: payload.payload.eventType,
+        timestamp: new Date(),
+      });
+    } catch (err) {
+      this.logger.error(
+        `Failed to emit notification to user:${payload.userId}`,
+        err instanceof Error ? err.stack : undefined,
+      );
+    }
+  }
+
+  private emitToAffectedUsers(event: TaskEventVO) {
+    try {
+      event.affectedUserIds.forEach((userId) => {
+        this.server.to(`user:${userId}`).emit('task.update', {
+          taskId: event.taskId,
+          eventAuthorId: event.eventAuthorId,
+          eventType: event.eventType,
+        });
+      });
+    } catch (err) {
+      this.logger.error(
+        `Failed to emit task event to affected users`,
+        err instanceof Error ? err.stack : undefined,
+      );
+    }
+  }
+
+  private emitError(client: AuthenticatedSocket, message: string) {
+    try {
+      client.emit('error', { message });
+    } catch {
+      // client.emit may not be available in test mocks
+    }
   }
 }

@@ -5,6 +5,7 @@ import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { ICommentRepository } from '../../../domain/repositories/comment.repository';
 import { ITaskEventBus } from '../../services/task-event-bus.service';
 import { AuthorizationService } from '../../services/authorization.service';
+import { UserNotFoundException } from '../../../../../shared/exceptions/business.exceptions';
 import { Comment } from '../../../domain/entities/comment.entity';
 import { TaskDto } from '../../dtos/task.dto';
 import { TaskMapper } from '../../mappers/task.mapper';
@@ -27,14 +28,11 @@ export class AddTaskCommentUseCase {
   }): Promise<TaskDto> {
     await this.authz.ensureTaskParticipant(input.taskId, input.userId);
 
-    const task = await this.taskRepo.findByIdWithAssignees(input.taskId);
-    if (!task) {
-      throw new Error('Resource not found');
-    }
+    const task = await this.taskRepo.findByIdWithAssignees(input.taskId)!;
 
     const author = await this.userRepo.findById(input.userId);
     if (!author) {
-      throw new Error('Resource not found');
+      throw new UserNotFoundException();
     }
 
     const comment = new Comment(

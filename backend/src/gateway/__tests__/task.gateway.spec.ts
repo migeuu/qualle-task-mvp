@@ -33,6 +33,7 @@ describe('TaskGateway', () => {
       } as any,
       join: vi.fn(),
       disconnect: vi.fn(),
+      emit: vi.fn(),
     };
 
     gateway = new TaskGateway(jwtService as JwtService);
@@ -110,12 +111,12 @@ describe('TaskGateway', () => {
       });
     });
 
-    it('should return pong with undefined userId if not authenticated', () => {
+    it('should return error if not authenticated', () => {
       mockSocket.userId = undefined;
 
       const result = gateway.handlePing({} as AuthenticatedSocket, null);
 
-      expect(result).toEqual({ event: 'pong', data: null, userId: undefined });
+      expect(result).toEqual({ event: 'error', message: 'Not authenticated' });
     });
   });
 

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { IHashService } from '../../services/hash.service';
 import { IAuthService } from '../../services/auth.service';
+import { InvalidCredentialsException } from '../../../../../shared/exceptions/business.exceptions';
 
 @Injectable()
 export class UserLoginUseCase {
@@ -17,7 +18,7 @@ export class UserLoginUseCase {
   }): Promise<{ accessToken: string; refreshToken: string }> {
     const user = await this.userRepo.findByEmailWithPassword(input.email);
     if (!user) {
-      throw new Error('Invalid credentials');
+      throw new InvalidCredentialsException();
     }
 
     const isValid = await this.hashService.compare(
@@ -25,7 +26,7 @@ export class UserLoginUseCase {
       user.password,
     );
     if (!isValid) {
-      throw new Error('Invalid credentials');
+      throw new InvalidCredentialsException();
     }
 
     const payload = { sub: user.id, email: user.email };

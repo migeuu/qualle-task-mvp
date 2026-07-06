@@ -1,8 +1,10 @@
 import { Module, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
+import { GraphQLError, GraphQLFormattedError } from 'graphql';
 import { JwtService } from '@nestjs/jwt';
 import { join } from 'path';
 import { CoreModule } from './modules/core/core.module';
@@ -35,6 +37,20 @@ import { SeedModule } from './seed/seed.module';
         }),
       ],
       includeStacktraceInErrorResponses: false,
+      formatError: (formattedError: GraphQLFormattedError) => {
+        const original = formattedError.extensions?.originalError;
+        if (original instanceof HttpException) {
+          const status = original.getStatus();
+          return {
+            message: original.message,
+            extensions: {
+              code: HttpStatus[status] || 'INTERNAL_SERVER_ERROR',
+              status,
+            },
+          };
+        }
+        return formattedError;
+      },
       context: ({ req }: any) => {
         const authorization =
           req?.headers?.authorization ||
@@ -55,11 +71,15 @@ import { SeedModule } from './seed/seed.module';
                   authorization.replace('Bearer ', ''),
                 );
                 return { user: payload, authorization };
-              } catch {
+              } catch (err) {
+                const logger = new Logger('GraphQLWS');
+                logger.warn(
+                  `Subscription connection rejected: ${err instanceof Error ? err.message : 'Invalid token'}`,
+                );
                 throw new Error('Unauthorized');
               }
             }
-            return {};
+            return { user: undefined };
           },
           onDisconnect: (_ctx, _code, _reason) => {
             new Logger('GraphQLWS').log('GraphQL WS disconnected');

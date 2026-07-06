@@ -27,10 +27,7 @@ export class UpdateTaskUseCase {
   }): Promise<TaskDto> {
     await this.authz.ensureTaskOwner(input.taskId, input.userId);
 
-    const task = await this.taskRepo.findById(input.taskId);
-    if (!task) {
-      throw new Error('Resource not found');
-    }
+    const task = await this.taskRepo.findById(input.taskId)!;
 
     const updated = new Task(
       task.id,

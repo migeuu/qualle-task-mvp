@@ -3,6 +3,7 @@ import { ITaskRepository } from '../../../domain/repositories/task.repository';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { ITaskEventBus } from '../../services/task-event-bus.service';
 import { AuthorizationService } from '../../services/authorization.service';
+import { UserNotFoundException } from '../../../../../shared/exceptions/business.exceptions';
 import { TaskDto } from '../../dtos/task.dto';
 import { TaskMapper } from '../../mappers/task.mapper';
 import { TaskEventVO } from '../../../domain/value-objects/task-event.vo';
@@ -23,15 +24,12 @@ export class AssignTaskUseCase {
   }): Promise<TaskDto> {
     await this.authz.ensureCanAssign(input.taskId, input.loggedUserId);
 
-    const task = await this.taskRepo.findByIdWithAssignees(input.taskId);
-    if (!task) {
-      throw new Error('Resource not found');
-    }
+    const task = await this.taskRepo.findByIdWithAssignees(input.taskId)!;
 
     for (const assigneeId of input.assigneeIds) {
       const user = await this.userRepo.findById(assigneeId);
       if (!user) {
-        throw new Error('Resource not found');
+        throw new UserNotFoundException();
       }
     }
 

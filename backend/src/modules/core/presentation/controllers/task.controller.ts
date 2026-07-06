@@ -8,7 +8,6 @@ import {
   Param,
   Req,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,7 +16,6 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { Request } from 'express';
-import { JwtAuthGuard } from '../../../../shared/guards/jwt-auth.guard';
 import { CreateTaskUseCase } from '../../application/use-cases/task/create-task.use-case';
 import { UpdateTaskUseCase } from '../../application/use-cases/task/update-task.use-case';
 import { DeleteTaskUseCase } from '../../application/use-cases/task/delete-task.use-case';
@@ -31,7 +29,6 @@ import { TaskStatus, TaskPriority } from '../../domain/enums/task.enum';
 
 @ApiTags('Tasks')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('tasks')
 export class TaskController {
   constructor(
@@ -45,6 +42,9 @@ export class TaskController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new task' })
+  @ApiResponse({ status: 201, description: 'Task created' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async create(
     @Body() input: CreateTaskInput,
     @Req() req: Request,
@@ -55,6 +55,8 @@ export class TaskController {
 
   @Get()
   @ApiOperation({ summary: 'List tasks with pagination and filters' })
+  @ApiResponse({ status: 200, description: 'Paginated task list' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findAll(
     @Req() req: Request,
     @Query('page') page?: string,
@@ -76,12 +78,19 @@ export class TaskController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get task details' })
+  @ApiResponse({ status: 200, description: 'Task details' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
   async findOne(@Param('id') id: string): Promise<any> {
     return this.findTaskDetailsUC.execute(id);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update a task' })
+  @ApiResponse({ status: 200, description: 'Task updated' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Not the task owner' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
   async update(
     @Param('id') id: string,
     @Body() input: UpdateTaskInput,
@@ -93,6 +102,10 @@ export class TaskController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a task' })
+  @ApiResponse({ status: 200, description: 'Task deleted' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Not the task owner' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
   async remove(
     @Param('id') id: string,
     @Req() req: Request,
@@ -104,6 +117,10 @@ export class TaskController {
 
   @Post('assign')
   @ApiOperation({ summary: 'Assign users to a task' })
+  @ApiResponse({ status: 200, description: 'Users assigned' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Only the task creator can assign users' })
+  @ApiResponse({ status: 404, description: 'Task or user not found' })
   async assign(
     @Body() input: AssignTaskInput,
     @Req() req: Request,

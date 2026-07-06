@@ -30,7 +30,7 @@ describe('FindUserDetailsUseCase', () => {
     mockUserRepo.findById.mockResolvedValue(null);
 
     await expect(useCase.execute('nonexistent')).rejects.toThrow(
-      'Resource not found',
+      'User not found',
     );
   });
 });

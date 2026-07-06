@@ -6,41 +6,69 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { GqlArgumentsHost } from '@nestjs/graphql';
+import { GqlArgumentsHost, GqlContextType } from '@nestjs/graphql';
+import { Response } from 'express';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost) {
-    GqlArgumentsHost.create(host);
+    const gqlHost = GqlArgumentsHost.create(host);
+
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    const message = this.extractMessage(exception);
 
     if (exception instanceof HttpException) {
-      const status = exception.getStatus();
-      const response = exception.getResponse();
+      if (status >= 500) {
+        this.logger.error(`[${status}] ${message}`, exception.stack);
+      } else {
+        this.logger.warn(`[${status}] ${message}`);
+      }
+    } else if (exception instanceof Error) {
+      const showStack =
+        process.env.NODE_ENV !== 'production' ? exception.stack : undefined;
+      this.logger.error(`[${status}] ${exception.message}`, showStack);
+    } else {
+      this.logger.error('Unknown exception type', String(exception));
+    }
 
-      const message =
-        typeof response === 'object' && response !== null
-          ? (response as Record<string, unknown>).message || exception.message
-          : exception.message;
-
-      this.logger.warn(`[${status}] ${JSON.stringify(message)}`);
-
+    if (host.getType<GqlContextType>() === 'graphql') {
       throw exception;
     }
 
-    if (exception instanceof Error) {
-      this.logger.error(exception.message, exception.stack);
-      throw new HttpException(
-        'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const body = {
+      statusCode: status,
+      message,
+      timestamp: new Date().toISOString(),
+    };
 
-    this.logger.error('Unknown exception type', String(exception));
-    throw new HttpException(
-      'Internal server error',
-      HttpStatus.INTERNAL_SERVER_ERROR,
-    );
+    response.status(status).json(body);
+  }
+
+  private extractMessage(exception: unknown): string {
+    if (exception instanceof HttpException) {
+      const response = exception.getResponse();
+      if (typeof response === 'object' && response !== null) {
+        const msg = (response as Record<string, unknown>).message;
+        if (Array.isArray(msg)) {
+          return (msg as string[]).join('; ');
+        }
+        if (typeof msg === 'string') {
+          return msg;
+        }
+      }
+      return exception.message;
+    }
+    if (exception instanceof Error) {
+      return exception.message;
+    }
+    return 'Internal server error';
   }
 }

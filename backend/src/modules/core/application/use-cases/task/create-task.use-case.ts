@@ -7,6 +7,7 @@ import { Task } from '../../../domain/entities/task.entity';
 import { TaskDto } from '../../dtos/task.dto';
 import { TaskMapper } from '../../mappers/task.mapper';
 import { TaskStatus, TaskPriority } from '../../../domain/enums/task.enum';
+import { UserNotFoundException } from '../../../../../shared/exceptions/business.exceptions';
 import { TaskEventVO } from '../../../domain/value-objects/task-event.vo';
 
 @Injectable()
@@ -27,7 +28,7 @@ export class CreateTaskUseCase {
   }): Promise<TaskDto> {
     const creator = await this.userRepo.findById(input.creatorId);
     if (!creator) {
-      throw new Error('Resource not found');
+      throw new UserNotFoundException();
     }
 
     const task = new Task(

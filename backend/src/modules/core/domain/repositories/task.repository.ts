@@ -16,6 +16,12 @@ export interface ITaskRepository {
     limit: number,
     filter?: TaskFilterParams,
   ): Promise<{ data: Task[]; total: number }>;
+  findAllByParticipant(
+    userId: string,
+    page: number,
+    limit: number,
+    filter?: TaskFilterParams,
+  ): Promise<{ data: Task[]; total: number }>;
   create(task: Task): Promise<Task>;
   save(task: Task): Promise<Task>;
   delete(id: string): Promise<void>;

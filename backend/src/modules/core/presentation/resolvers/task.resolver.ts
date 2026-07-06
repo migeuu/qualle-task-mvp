@@ -1,7 +1,6 @@
 import { Resolver, Query, Mutation, Args, Subscription } from '@nestjs/graphql';
-import { UseGuards, Inject } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { PubSub } from 'graphql-subscriptions';
-import { JwtAuthGuard } from '../../../../shared/guards/jwt-auth.guard';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator';
 import { CreateTaskUseCase } from '../../application/use-cases/task/create-task.use-case';
 import { UpdateTaskUseCase } from '../../application/use-cases/task/update-task.use-case';
@@ -34,7 +33,6 @@ export class TaskResolver {
     @Inject('PUB_SUB') private readonly pubSub: PubSub,
   ) {}
 
-  @UseGuards(JwtAuthGuard)
   @Query(() => TaskPage)
   async tasks(
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
@@ -99,14 +97,12 @@ export class TaskResolver {
     };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Query(() => TaskTypeormEntity)
   async task(@Args('taskId') taskId: string): Promise<TaskTypeormEntity> {
     const found = await this.taskRepo.findById(taskId);
     return found as unknown as TaskTypeormEntity;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Mutation(() => TaskTypeormEntity)
   async createTask(
     @Args('input') input: CreateTaskInput,
@@ -124,7 +120,6 @@ export class TaskResolver {
     return found as unknown as TaskTypeormEntity;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Mutation(() => TaskTypeormEntity)
   async updateTask(
     @Args('input') input: UpdateTaskInput,
@@ -143,7 +138,6 @@ export class TaskResolver {
     return found as unknown as TaskTypeormEntity;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Mutation(() => Boolean)
   async deleteTask(
     @Args('input') input: DeleteTaskInput,
@@ -153,7 +147,6 @@ export class TaskResolver {
     return true;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Mutation(() => TaskTypeormEntity)
   async assignTask(
     @Args('input') input: AssignTaskInput,

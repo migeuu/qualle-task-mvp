@@ -171,7 +171,7 @@ describe('AddTaskCommentUseCase', () => {
         userId: 'nonexistent',
         content: 'Test',
       }),
-    ).rejects.toThrow('Resource not found');
+    ).rejects.toThrow('User not found');
   });
 
   it('should refetch task after creating comment', async () => {
