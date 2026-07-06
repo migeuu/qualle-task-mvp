@@ -1,12 +1,14 @@
 import { Outlet, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useSocketEffect } from '../hooks/useSocket'
+import { useGraphQLSubscription } from '../hooks/useGraphQLSubscription'
 import { NotificationBadge } from './NotificationBadge'
 
 export function Layout() {
   const { user, logout } = useAuth()
 
   useSocketEffect()
+  useGraphQLSubscription()
 
   return (
     <>

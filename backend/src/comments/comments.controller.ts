@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Comment } from './domain/comment.entity';
 import { CreateCommentInput } from './dto/create-comment.input';
@@ -28,7 +28,7 @@ export class CommentsController {
   @Get('task/:taskId')
   @ApiOperation({ summary: 'List comments for a task' })
   @ApiResponse({ status: 200, description: 'List of comments', type: [Comment] })
-  findByTask(@Param('taskId') taskId: string): Promise<Comment[]> {
+  findByTask(@Param('taskId', ParseUUIDPipe) taskId: string): Promise<Comment[]> {
     return this.listCommentsUseCase.execute(taskId);
   }
 }

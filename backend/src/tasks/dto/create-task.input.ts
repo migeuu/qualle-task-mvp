@@ -1,5 +1,6 @@
 import { InputType, Field } from '@nestjs/graphql';
 import { IsString, IsOptional, IsEnum, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
 import { TaskStatus, TaskPriority } from '../domain/task.enums';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -15,6 +16,7 @@ export class CreateTaskInput {
   @Field({ nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(5000)
   description?: string;
 
   @ApiPropertyOptional({ enum: TaskStatus, default: TaskStatus.TODO })
@@ -32,5 +34,6 @@ export class CreateTaskInput {
   @ApiPropertyOptional()
   @Field({ nullable: true })
   @IsOptional()
+  @Type(() => Date)
   dueDate?: Date;
 }

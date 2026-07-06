@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 import { PubSub } from 'graphql-subscriptions';
 import { NotificationGateway } from '../notification.gateway';
+import { EventsService } from '../events.service';
 import { EVENTS } from '../event.constants';
 import { Task } from '../../tasks/domain/task.entity';
 import { Comment } from '../../comments/domain/comment.entity';
@@ -327,6 +328,288 @@ describe('Decoupled Event Bus', () => {
       const pubSubResult = await nextPromise;
       expect(listener.receivedPayloads).toHaveLength(1);
       expect(pubSubResult.value).toEqual({ taskUpdated: mockTask });
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // EventsService - filtered subscription integration
+  // -----------------------------------------------------------------------
+  describe('EventsService (filtered subscriptions)', () => {
+    let eventsService: EventsService;
+    let pubSub: PubSub;
+    let eventEmitter: EventEmitter2;
+
+    const creatorUser: User = {
+      id: 'creator-1',
+      email: 'creator@qualle.com',
+      password: 'hash',
+      name: 'Creator',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const assigneeUser: User = {
+      id: 'assignee-1',
+      email: 'assignee@qualle.com',
+      password: 'hash',
+      name: 'Assignee',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const outsiderUser: User = {
+      id: 'outsider-1',
+      email: 'outsider@qualle.com',
+      password: 'hash',
+      name: 'Outsider',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    function buildTask(overrides: Partial<Task> = {}): Task {
+      return {
+        id: 'task-1',
+        title: 'Test Task',
+        description: null,
+        status: TaskStatus.TODO,
+        priority: TaskPriority.MEDIUM,
+        dueDate: null,
+        creator: creatorUser,
+        creatorId: creatorUser.id,
+        assignees: [assigneeUser],
+        comments: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...overrides,
+      };
+    }
+
+    function buildComment(task: Task, author: User): Comment {
+      return {
+        id: 'comment-1',
+        content: 'Test comment',
+        task,
+        taskId: task.id,
+        author,
+        authorId: author.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    }
+
+    beforeEach(() => {
+      pubSub = new PubSub();
+      eventEmitter = new EventEmitter2();
+      eventsService = new EventsService(eventEmitter, pubSub);
+    });
+
+    describe('taskUpdated -> filterTaskUpdated', () => {
+      it('should deliver to the task creator', async () => {
+        const task = buildTask();
+        const iterator = eventsService.filterTaskUpdated(creatorUser.id);
+        const nextPromise = iterator.next();
+
+        eventsService.taskUpdated(task);
+
+        const result = await nextPromise;
+        expect(result.done).toBe(false);
+        expect(result.value).toEqual({ taskUpdated: task });
+      });
+
+      it('should deliver to the task assignee', async () => {
+        const task = buildTask();
+        const iterator = eventsService.filterTaskUpdated(assigneeUser.id);
+        const nextPromise = iterator.next();
+
+        eventsService.taskUpdated(task);
+
+        const result = await nextPromise;
+        expect(result.done).toBe(false);
+        expect(result.value).toEqual({ taskUpdated: task });
+      });
+
+      it('should NOT deliver to an unrelated user', async () => {
+        const task = buildTask();
+        const iterator = eventsService.filterTaskUpdated(outsiderUser.id);
+        const nextPromise = iterator.next();
+
+        eventsService.taskUpdated(task);
+
+        const raceResult = await Promise.race([
+          nextPromise.then(() => 'received'),
+          new Promise<string>((resolve) => setTimeout(() => resolve('timeout'), 200)),
+        ]);
+
+        expect(raceResult).toBe('timeout');
+      });
+
+      it('should emit to EventEmitter2 with correct payload', async () => {
+        const emitSpy = vi.spyOn(eventEmitter, 'emit');
+        const task = buildTask();
+
+        eventsService.taskUpdated(task);
+
+        expect(emitSpy).toHaveBeenCalledWith(EVENTS.TASK_UPDATED, {
+          task,
+          userIds: expect.arrayContaining([creatorUser.id, assigneeUser.id]),
+        });
+      });
+    });
+
+    describe('taskAssigned -> filterTaskAssigned', () => {
+      it('should deliver to the assigned user', async () => {
+        const newAssigneeId = 'new-user';
+        const task = buildTask({
+          assignees: [{ ...assigneeUser, id: newAssigneeId, email: 'new@qualle.com' }],
+        });
+        const iterator = eventsService.filterTaskAssigned(newAssigneeId);
+        const nextPromise = iterator.next();
+
+        eventsService.taskAssigned(task, newAssigneeId);
+
+        const result = await nextPromise;
+        expect(result.done).toBe(false);
+        expect(result.value).toEqual({ taskAssigned: task });
+      });
+
+      it('should NOT deliver to an unrelated user', async () => {
+        const task = buildTask({ assignees: [{ ...assigneeUser, id: 'new-user', email: 'new@qualle.com' }] });
+        const iterator = eventsService.filterTaskAssigned(outsiderUser.id);
+        const nextPromise = iterator.next();
+
+        eventsService.taskAssigned(task, 'new-user');
+
+        const raceResult = await Promise.race([
+          nextPromise.then(() => 'received'),
+          new Promise<string>((resolve) => setTimeout(() => resolve('timeout'), 200)),
+        ]);
+
+        expect(raceResult).toBe('timeout');
+      });
+
+      it('should emit to EventEmitter2 with userIds including the new assignee', async () => {
+        const emitSpy = vi.spyOn(eventEmitter, 'emit');
+        const newAssigneeId = 'new-user';
+        const task = buildTask({
+          assignees: [{ ...assigneeUser, id: newAssigneeId, email: 'new@qualle.com' }],
+        });
+
+        eventsService.taskAssigned(task, newAssigneeId);
+
+        expect(emitSpy).toHaveBeenCalledWith(EVENTS.TASK_ASSIGNED, {
+          task,
+          userIds: expect.arrayContaining([creatorUser.id, newAssigneeId]),
+        });
+      });
+
+      it('should emit a direct notification to EventEmitter2', async () => {
+        const emitSpy = vi.spyOn(eventEmitter, 'emit');
+        const newAssigneeId = 'new-user';
+        const task = buildTask({
+          assignees: [{ ...assigneeUser, id: newAssigneeId, email: 'new@qualle.com' }],
+        });
+
+        eventsService.taskAssigned(task, newAssigneeId);
+
+        expect(emitSpy).toHaveBeenCalledWith(EVENTS.NOTIFICATION, {
+          userId: newAssigneeId,
+          message: `You have been assigned to task "${task.title}"`,
+        });
+      });
+    });
+
+    describe('newComment -> filterNewComment', () => {
+      it('should deliver to the task creator', async () => {
+        const task = buildTask();
+        const comment = buildComment(task, assigneeUser);
+        const iterator = eventsService.filterNewComment(creatorUser.id);
+        const nextPromise = iterator.next();
+
+        eventsService.newComment(comment);
+
+        const result = await nextPromise;
+        expect(result.done).toBe(false);
+        expect(result.value).toEqual({ newComment: comment });
+      });
+
+      it('should deliver to other task assignees', async () => {
+        const secondAssignee: User = {
+          ...assigneeUser,
+          id: 'assignee-2',
+          email: 'assignee2@qualle.com',
+        };
+        const task = buildTask({
+          assignees: [assigneeUser, secondAssignee],
+        });
+        const comment = buildComment(task, creatorUser);
+        const iterator = eventsService.filterNewComment(assigneeUser.id);
+        const nextPromise = iterator.next();
+
+        eventsService.newComment(comment);
+
+        const result = await nextPromise;
+        expect(result.done).toBe(false);
+        expect(result.value).toEqual({ newComment: comment });
+      });
+
+      it('should NOT deliver to an unrelated user', async () => {
+        const task = buildTask();
+        const comment = buildComment(task, creatorUser);
+        const iterator = eventsService.filterNewComment(outsiderUser.id);
+        const nextPromise = iterator.next();
+
+        eventsService.newComment(comment);
+
+        const raceResult = await Promise.race([
+          nextPromise.then(() => 'received'),
+          new Promise<string>((resolve) => setTimeout(() => resolve('timeout'), 200)),
+        ]);
+
+        expect(raceResult).toBe('timeout');
+      });
+
+      it('should emit to EventEmitter2 with comment and relevant userIds', async () => {
+        const emitSpy = vi.spyOn(eventEmitter, 'emit');
+        const task = buildTask();
+        const comment = buildComment(task, assigneeUser);
+
+        eventsService.newComment(comment);
+
+        expect(emitSpy).toHaveBeenCalledWith(EVENTS.NEW_COMMENT, {
+          comment,
+          userIds: expect.arrayContaining([creatorUser.id, assigneeUser.id]),
+        });
+      });
+
+      it('should NOT emit notification to the comment author', async () => {
+        const emitSpy = vi.spyOn(eventEmitter, 'emit');
+        const task = buildTask();
+        const comment = buildComment(task, assigneeUser); // author = assignee
+
+        eventsService.newComment(comment);
+
+        const notificationCalls = emitSpy.mock.calls.filter(
+          ([event]) => event === EVENTS.NOTIFICATION,
+        );
+        const notifiedUserIds = notificationCalls.map(([, payload]) => (payload as { userId: string }).userId);
+        expect(notifiedUserIds).not.toContain(assigneeUser.id);
+      });
+    });
+
+    describe('concurrent subscriptions', () => {
+      it('should deliver to multiple subscribers on the same event', async () => {
+        const task = buildTask();
+        const iter1 = eventsService.filterTaskUpdated(creatorUser.id);
+        const iter2 = eventsService.filterTaskUpdated(creatorUser.id);
+        const next1 = iter1.next();
+        const next2 = iter2.next();
+
+        eventsService.taskUpdated(task);
+
+        const [result1, result2] = await Promise.all([next1, next2]);
+        expect(result1.value).toEqual({ taskUpdated: task });
+        expect(result2.value).toEqual({ taskUpdated: task });
+      });
     });
   });
 });

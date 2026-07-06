@@ -1,5 +1,6 @@
 import { InputType, Field, ID } from '@nestjs/graphql';
-import { IsString, IsOptional, IsEnum, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsUUID, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
 import { TaskStatus, TaskPriority } from '../domain/task.enums';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -7,7 +8,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class UpdateTaskInput {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @Field(() => ID)
-  @IsString()
+  @IsUUID()
   id: string;
 
   @ApiPropertyOptional({ example: 'Updated title' })
@@ -21,6 +22,7 @@ export class UpdateTaskInput {
   @Field({ nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(5000)
   description?: string;
 
   @ApiPropertyOptional({ enum: TaskStatus })
@@ -38,5 +40,6 @@ export class UpdateTaskInput {
   @ApiPropertyOptional()
   @Field({ nullable: true })
   @IsOptional()
+  @Type(() => Date)
   dueDate?: Date;
 }

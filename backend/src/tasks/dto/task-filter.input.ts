@@ -1,5 +1,6 @@
 import { InputType, Field } from '@nestjs/graphql';
 import { IsOptional, IsEnum } from 'class-validator';
+import { Type } from 'class-transformer';
 import { TaskStatus, TaskPriority } from '../domain/task.enums';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -20,5 +21,6 @@ export class TaskFilterInput {
   @ApiPropertyOptional()
   @Field({ nullable: true })
   @IsOptional()
+  @Type(() => Date)
   dueDate?: Date;
 }

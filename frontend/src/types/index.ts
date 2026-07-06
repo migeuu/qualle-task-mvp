@@ -105,6 +105,18 @@ export interface CreateCommentInput {
   content: string;
 }
 
+export interface TaskUpdatedPayload {
+  taskUpdated: Task;
+}
+
+export interface TaskAssignedPayload {
+  taskAssigned: Task;
+}
+
+export interface NewCommentPayload {
+  newComment: Comment;
+}
+
 export interface NotificationPayload {
   message: string;
   timestamp: string;

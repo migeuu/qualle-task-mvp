@@ -77,8 +77,9 @@ export class TasksResolver {
   @UseGuards(JwtAuthGuard)
   async assignTask(
     @Args('input') input: AssignTaskInput,
+    @CurrentUser() user: { sub: string },
   ): Promise<Task> {
-    return this.assignTaskUseCase.execute(input.taskId, input.userId);
+    return this.assignTaskUseCase.execute(input.taskId, input.userId, user.sub);
   }
 
   @Subscription(() => TaskUpdatedPayload)

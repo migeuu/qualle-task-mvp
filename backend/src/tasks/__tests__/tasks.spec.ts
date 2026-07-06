@@ -11,7 +11,7 @@ import { AssignTaskUseCase } from '../use-cases/assign-task.use-case';
 import { Task } from '../domain/task.entity';
 import { User } from '../../auth/domain/user.entity';
 import { TaskStatus, TaskPriority } from '../domain/task.enums';
-import { TaskNotFoundException, NotTaskOwnerException, UserNotFoundException } from '../../shared/exceptions/business.exceptions';
+import { TaskNotFoundException, NotTaskOwnerException, UserNotFoundException, NotAuthorizedToAssignException } from '../../shared/exceptions/business.exceptions';
 
 const mockUser: User = {
   id: 'user-1',
@@ -186,7 +186,7 @@ describe('Tasks Use Cases', () => {
       vi.spyOn(taskRepository, 'save').mockResolvedValue({} as Task);
       vi.spyOn(taskRepository, 'findById').mockResolvedValue({ ...mockTask, assignees: [mockUser] });
 
-      const result = await assignTaskUseCase.execute(mockTask.id, mockUser.id);
+      const result = await assignTaskUseCase.execute(mockTask.id, mockUser.id, mockTask.creatorId);
 
       expect(result.assignees).toHaveLength(1);
     });
@@ -197,9 +197,17 @@ describe('Tasks Use Cases', () => {
       vi.spyOn(userRepository, 'findById').mockResolvedValue(mockUser);
       vi.spyOn(taskRepository, 'findById').mockResolvedValue(taskWithAssignee);
 
-      await assignTaskUseCase.execute(mockTask.id, mockUser.id);
+      await assignTaskUseCase.execute(mockTask.id, mockUser.id, mockTask.creatorId);
 
       expect(taskRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotAuthorizedToAssignException when user is not the task creator', async () => {
+      vi.spyOn(taskRepository, 'findByIdWithAssignees').mockResolvedValue(mockTask);
+
+      await expect(
+        assignTaskUseCase.execute(mockTask.id, mockUser.id, 'different-user-id'),
+      ).rejects.toThrow(NotAuthorizedToAssignException);
     });
   });
 });

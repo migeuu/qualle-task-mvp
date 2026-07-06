@@ -144,9 +144,9 @@ describe('TasksResolver', () => {
       const input: AssignTaskInput = { taskId: 'task-1', userId: 'user-2' };
       vi.spyOn(assignTask, 'execute').mockResolvedValue(mockTask);
 
-      const result = await resolver.assignTask(input);
+      const result = await resolver.assignTask(input, { sub: 'user-1' });
 
-      expect(assignTask.execute).toHaveBeenCalledWith('task-1', 'user-2');
+      expect(assignTask.execute).toHaveBeenCalledWith('task-1', 'user-2', 'user-1');
       expect(result).toEqual(mockTask);
     });
   });

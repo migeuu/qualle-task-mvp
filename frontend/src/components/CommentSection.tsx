@@ -1,8 +1,17 @@
 import { useState } from 'react'
+import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { useAddComment } from '../hooks/useComments'
 import { formatDate } from '../lib/date'
 import type { Comment } from '../types'
+
+const commentSchema = z.object({
+  content: z
+    .string()
+    .trim()
+    .min(1, 'Comment cannot be empty')
+    .max(1000, 'Comment must be 1000 characters or less'),
+})
 
 interface CommentSectionProps {
   taskId: string
@@ -11,15 +20,21 @@ interface CommentSectionProps {
 
 export function CommentSection({ taskId, comments }: CommentSectionProps) {
   const [content, setContent] = useState('')
+  const [error, setError] = useState<string | null>(null)
   const addComment = useAddComment()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const trimmed = content.trim()
-    if (!trimmed) return
+    setError(null)
+
+    const validation = commentSchema.safeParse({ content })
+    if (!validation.success) {
+      setError(validation.error.issues[0].message)
+      return
+    }
 
     try {
-      await addComment.mutateAsync({ taskId, content: trimmed })
+      await addComment.mutateAsync({ taskId, content: validation.data.content })
       setContent('')
       toast.success('Comment added')
     } catch (err) {
@@ -27,6 +42,8 @@ export function CommentSection({ taskId, comments }: CommentSectionProps) {
       toast.error(message)
     }
   }
+
+  const isEnabled = content.trim().length > 0 && content.trim().length <= 1000
 
   return (
     <div style={{ marginTop: 16 }}>
@@ -55,14 +72,17 @@ export function CommentSection({ taskId, comments }: CommentSectionProps) {
       <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8 }}>
         <textarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) => {
+            setContent(e.target.value)
+            setError(null)
+          }}
           placeholder="Write a comment..."
           rows={2}
           style={{
             flex: 1,
             padding: '8px 12px',
             borderRadius: 4,
-            border: '1px solid #ccc',
+            border: error ? '1px solid #e53e3e' : '1px solid #ccc',
             fontSize: 14,
             resize: 'vertical',
             boxSizing: 'border-box',
@@ -70,22 +90,25 @@ export function CommentSection({ taskId, comments }: CommentSectionProps) {
         />
         <button
           type="submit"
-          disabled={addComment.isPending || !content.trim()}
+          disabled={addComment.isPending || !isEnabled}
           style={{
             padding: '8px 20px',
             borderRadius: 4,
             border: 'none',
             background: '#1a1a2e',
             color: 'white',
-            cursor: addComment.isPending || !content.trim() ? 'not-allowed' : 'pointer',
+            cursor: addComment.isPending || !isEnabled ? 'not-allowed' : 'pointer',
             fontSize: 14,
             alignSelf: 'flex-end',
-            opacity: addComment.isPending || !content.trim() ? 0.5 : 1,
+            opacity: addComment.isPending || !isEnabled ? 0.5 : 1,
           }}
         >
           {addComment.isPending ? 'Sending...' : 'Send'}
         </button>
       </form>
+      {error && (
+        <p style={{ margin: '4px 0 0 0', fontSize: 12, color: '#e53e3e' }}>{error}</p>
+      )}
     </div>
   )
 }

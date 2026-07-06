@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Body, Param, Query, UseGuards, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Task } from './domain/task.entity';
 import { CreateTaskInput } from './dto/create-task.input';
@@ -55,10 +55,23 @@ export class TasksController {
     const filter: TaskFilterInput = {};
     if (status) filter.status = status;
     if (priority) filter.priority = priority;
-    if (dueDate) filter.dueDate = new Date(dueDate);
+    if (dueDate) {
+      const parsed = new Date(dueDate);
+      if (isNaN(parsed.getTime())) {
+        filter.dueDate = undefined;
+      } else {
+        filter.dueDate = parsed;
+      }
+    }
     const pagination: PaginationInput = {};
-    if (page) pagination.page = parseInt(page, 10);
-    if (limit) pagination.limit = parseInt(limit, 10);
+    if (page) {
+      const parsedPage = parseInt(page, 10);
+      if (!isNaN(parsedPage) && parsedPage >= 1) pagination.page = parsedPage;
+    }
+    if (limit) {
+      const parsedLimit = parseInt(limit, 10);
+      if (!isNaN(parsedLimit) && parsedLimit >= 1 && parsedLimit <= 100) pagination.limit = parsedLimit;
+    }
     return this.listTasksUseCase.execute(filter, pagination);
   }
 
@@ -66,7 +79,7 @@ export class TasksController {
   @ApiOperation({ summary: 'Get task by ID' })
   @ApiResponse({ status: 200, description: 'Task details', type: Task })
   @ApiResponse({ status: 404, description: 'Task not found' })
-  findOne(@Param('id') id: string): Promise<Task> {
+  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Task> {
     return this.getTaskUseCase.execute(id);
   }
 
@@ -75,7 +88,7 @@ export class TasksController {
   @ApiResponse({ status: 200, description: 'Task updated', type: Task })
   @ApiResponse({ status: 403, description: 'Not the task owner' })
   @ApiResponse({ status: 404, description: 'Task not found' })
-  update(@Param('id') id: string, @Body() input: UpdateTaskInput, @CurrentUser() user: { sub: string }): Promise<Task> {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() input: UpdateTaskInput, @CurrentUser() user: { sub: string }): Promise<Task> {
     return this.updateTaskUseCase.execute({ ...input, id }, user.sub);
   }
 
@@ -84,15 +97,16 @@ export class TasksController {
   @ApiResponse({ status: 200, description: 'Task deleted' })
   @ApiResponse({ status: 403, description: 'Not the task owner' })
   @ApiResponse({ status: 404, description: 'Task not found' })
-  delete(@Param('id') id: string, @CurrentUser() user: { sub: string }): Promise<boolean> {
+  delete(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: { sub: string }): Promise<boolean> {
     return this.deleteTaskUseCase.execute(id, user.sub);
   }
 
   @Post('assign')
   @ApiOperation({ summary: 'Assign a user to a task' })
   @ApiResponse({ status: 200, description: 'User assigned', type: Task })
+  @ApiResponse({ status: 403, description: 'Not the task owner' })
   @ApiResponse({ status: 404, description: 'Task or user not found' })
-  assign(@Body() input: AssignTaskInput): Promise<Task> {
-    return this.assignTaskUseCase.execute(input.taskId, input.userId);
+  assign(@Body() input: AssignTaskInput, @CurrentUser() user: { sub: string }): Promise<Task> {
+    return this.assignTaskUseCase.execute(input.taskId, input.userId, user.sub);
   }
 }

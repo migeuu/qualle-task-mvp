@@ -74,7 +74,8 @@ export class EventsService {
     while (true) {
       const result = await iterator.next();
       if (result.done) break;
-      const task = result.value as Task;
+      const payload = result.value as { taskUpdated: Task };
+      const task = payload.taskUpdated;
       const relevantUserIds = this.getRelevantUserIds(task);
       if (relevantUserIds.includes(userId)) {
         yield { taskUpdated: task };
@@ -88,7 +89,8 @@ export class EventsService {
     while (true) {
       const result = await iterator.next();
       if (result.done) break;
-      const task = result.value as Task;
+      const payload = result.value as { taskAssigned: Task };
+      const task = payload.taskAssigned;
       const relevantUserIds = this.getRelevantUserIds(task);
       if (relevantUserIds.includes(userId)) {
         yield { taskAssigned: task };
@@ -102,7 +104,8 @@ export class EventsService {
     while (true) {
       const result = await iterator.next();
       if (result.done) break;
-      const comment = result.value as Comment;
+      const payload = result.value as { newComment: Comment };
+      const comment = payload.newComment;
       if (comment?.task) {
         const relevantUserIds = this.getRelevantUserIds(comment.task);
         if (relevantUserIds.includes(userId)) {
