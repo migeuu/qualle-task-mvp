@@ -1,4 +1,5 @@
 import { Module, Logger } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
@@ -10,6 +11,7 @@ import { join } from 'path';
 import { CoreModule } from './modules/core/core.module';
 import { GatewayModule } from './gateway/gateway.module';
 import { SeedModule } from './seed/seed.module';
+import { JwtAuthGuard } from './shared/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -90,6 +92,9 @@ import { SeedModule } from './seed/seed.module';
     CoreModule,
     GatewayModule,
     SeedModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
 export class AppModule {}

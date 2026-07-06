@@ -10,6 +10,7 @@ import { CommentTypeormEntity } from '../src/modules/core/infra/orm/entities/com
 import { TaskResolver } from '../src/modules/core/presentation/resolvers/task.resolver';
 import { AuthResolver } from '../src/modules/core/presentation/resolvers/auth.resolver';
 import { CommentResolver } from '../src/modules/core/presentation/resolvers/comment.resolver';
+import { GlobalExceptionFilter } from '../src/shared/filters/global-exception.filter';
 
 process.env.JWT_SECRET = 'test-secret';
 process.env.JWT_EXPIRATION = '1h';
@@ -46,6 +47,7 @@ describe('REST API (e2e)', () => {
     app.useGlobalPipes(
       new ValidationPipe({ transform: true, whitelist: true }),
     );
+    app.useGlobalFilters(new GlobalExceptionFilter());
     await app.init();
   });
 

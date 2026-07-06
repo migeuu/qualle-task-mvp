@@ -1,12 +1,9 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PubSub } from 'graphql-subscriptions';
 import { registerEnumType } from '@nestjs/graphql';
-
-import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 
 import { UserTypeormEntity } from './infra/orm/entities/user.typeorm-entity';
 import { TaskTypeormEntity } from './infra/orm/entities/task.typeorm-entity';
@@ -125,8 +122,6 @@ const tokenMappings = [
     CommentResolver,
 
     ...tokenMappings,
-
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
   exports: [
     UserTypeormRepository,
