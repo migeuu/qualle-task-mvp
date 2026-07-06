@@ -44,6 +44,7 @@ describe('REST API (e2e)', () => {
       .compile();
 
     app = m.createNestApplication();
+    app.useLogger(false);
     app.useGlobalPipes(
       new ValidationPipe({ transform: true, whitelist: true }),
     );
