@@ -26,27 +26,27 @@ export class TaskTypeormEntity {
 
   @Field()
   @ApiProperty()
-  @Column({ length: 200 })
+  @Column({ length: 200, type: 'varchar' })
   title: string;
 
   @Field({ nullable: true })
   @ApiProperty({ required: false })
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'varchar' })
   description: string | null;
 
   @Field(() => String)
   @ApiProperty({ enum: TaskStatus, default: TaskStatus.TODO })
-  @Column({ type: 'enum', enum: TaskStatus, default: TaskStatus.TODO })
+  @Column({ type: 'varchar', enum: TaskStatus, default: TaskStatus.TODO })
   status: TaskStatus;
 
   @Field(() => String)
   @ApiProperty({ enum: TaskPriority, default: TaskPriority.MEDIUM })
-  @Column({ type: 'enum', enum: TaskPriority, default: TaskPriority.MEDIUM })
+  @Column({ type: 'varchar', enum: TaskPriority, default: TaskPriority.MEDIUM })
   priority: TaskPriority;
 
   @Field({ nullable: true })
   @ApiProperty({ required: false })
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'datetime' })
   dueDate: Date | null;
 
   @Column({ type: 'uuid' })

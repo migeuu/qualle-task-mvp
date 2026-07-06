@@ -12,15 +12,15 @@ export class UserTypeormEntity {
 
   @Field()
   @ApiProperty()
-  @Column({ unique: true })
+  @Column({ unique: true, type: 'varchar' })
   email: string;
 
-  @Column({ select: false })
+  @Column({ select: false, type: 'varchar' })
   password: string;
 
   @Field()
   @ApiProperty()
-  @Column()
+  @Column({ type: 'varchar' })
   name: string;
 
   @Field()

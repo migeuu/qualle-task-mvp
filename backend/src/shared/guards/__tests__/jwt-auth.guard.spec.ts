@@ -39,6 +39,10 @@ describe('JwtAuthGuard', () => {
     mockContext = {
       getHandler: vi.fn(),
       getClass: vi.fn(),
+      getType: vi.fn().mockReturnValue('graphql'),
+      switchToHttp: vi.fn().mockReturnValue({
+        getRequest: vi.fn().mockReturnValue({}),
+      }),
     };
 
     guard = new JwtAuthGuard(jwtService as JwtService, reflector as Reflector);

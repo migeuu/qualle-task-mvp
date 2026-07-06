@@ -9,7 +9,9 @@ vi.mock('@nestjs/graphql', () => ({
 }));
 
 describe('CurrentUser', () => {
-  const mockExecutionContext = {} as ExecutionContext;
+  const mockExecutionContext = {
+    getType: vi.fn().mockReturnValue('graphql'),
+  } as unknown as ExecutionContext;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -22,7 +24,9 @@ describe('CurrentUser', () => {
 });
 
 describe('extractUserFromContext', () => {
-  const mockExecutionContext = {} as ExecutionContext;
+  const mockExecutionContext = {
+    getType: vi.fn().mockReturnValue('graphql'),
+  } as unknown as ExecutionContext;
 
   beforeEach(() => {
     vi.clearAllMocks();
