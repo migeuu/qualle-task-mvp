@@ -16,7 +16,7 @@ describe('UserSignupUseCase', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useCase = new UserSignupUseCase(mockUserRepo as any, mockHashService as any);
+    useCase = new UserSignupUseCase(mockUserRepo as any, mockHashService);
   });
 
   it('should create a new user successfully', async () => {
@@ -24,7 +24,11 @@ describe('UserSignupUseCase', () => {
     mockHashService.hash.mockResolvedValue('hashed-pw');
     mockUserRepo.create.mockResolvedValue(undefined);
 
-    await useCase.execute({ name: 'Alice', email: 'alice@test.com', password: 'secret123' });
+    await useCase.execute({
+      name: 'Alice',
+      email: 'alice@test.com',
+      password: 'secret123',
+    });
 
     expect(mockUserRepo.findByEmail).toHaveBeenCalledWith('alice@test.com');
     expect(mockHashService.hash).toHaveBeenCalledWith('secret123');
@@ -37,10 +41,16 @@ describe('UserSignupUseCase', () => {
   });
 
   it('should throw when email is already in use', async () => {
-    mockUserRepo.findByEmail.mockResolvedValue(new User('id', 'alice@test.com', 'pw', 'Alice', new Date(), new Date()));
+    mockUserRepo.findByEmail.mockResolvedValue(
+      new User('id', 'alice@test.com', 'pw', 'Alice', new Date(), new Date()),
+    );
 
     await expect(
-      useCase.execute({ name: 'Alice', email: 'alice@test.com', password: 'secret123' }),
+      useCase.execute({
+        name: 'Alice',
+        email: 'alice@test.com',
+        password: 'secret123',
+      }),
     ).rejects.toThrow('Email already in use');
 
     expect(mockUserRepo.create).not.toHaveBeenCalled();
@@ -63,22 +73,45 @@ describe('UserLoginUseCase', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useCase = new UserLoginUseCase(mockUserRepo as any, mockHashService as any, mockAuthService as any);
+    useCase = new UserLoginUseCase(
+      mockUserRepo as any,
+      mockHashService as any,
+      mockAuthService as any,
+    );
   });
 
   it('should return tokens on valid credentials', async () => {
-    const user = new User('user-1', 'alice@test.com', 'hashed', 'Alice', new Date(), new Date());
+    const user = new User(
+      'user-1',
+      'alice@test.com',
+      'hashed',
+      'Alice',
+      new Date(),
+      new Date(),
+    );
     mockUserRepo.findByEmailWithPassword.mockResolvedValue(user);
     mockHashService.compare.mockResolvedValue(true);
     mockAuthService.generateAccessToken.mockReturnValue('access-token');
     mockAuthService.generateRefreshToken.mockReturnValue('refresh-token');
 
-    const result = await useCase.execute({ email: 'alice@test.com', password: 'secret123' });
+    const result = await useCase.execute({
+      email: 'alice@test.com',
+      password: 'secret123',
+    });
 
-    expect(result).toEqual({ accessToken: 'access-token', refreshToken: 'refresh-token' });
+    expect(result).toEqual({
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+    });
     expect(mockHashService.compare).toHaveBeenCalledWith('secret123', 'hashed');
-    expect(mockAuthService.generateAccessToken).toHaveBeenCalledWith({ sub: 'user-1', email: 'alice@test.com' });
-    expect(mockAuthService.generateRefreshToken).toHaveBeenCalledWith({ sub: 'user-1', email: 'alice@test.com' });
+    expect(mockAuthService.generateAccessToken).toHaveBeenCalledWith({
+      sub: 'user-1',
+      email: 'alice@test.com',
+    });
+    expect(mockAuthService.generateRefreshToken).toHaveBeenCalledWith({
+      sub: 'user-1',
+      email: 'alice@test.com',
+    });
   });
 
   it('should throw when email not found', async () => {
@@ -90,7 +123,14 @@ describe('UserLoginUseCase', () => {
   });
 
   it('should throw when password does not match', async () => {
-    const user = new User('user-1', 'alice@test.com', 'hashed', 'Alice', new Date(), new Date());
+    const user = new User(
+      'user-1',
+      'alice@test.com',
+      'hashed',
+      'Alice',
+      new Date(),
+      new Date(),
+    );
     mockUserRepo.findByEmailWithPassword.mockResolvedValue(user);
     mockHashService.compare.mockResolvedValue(false);
 

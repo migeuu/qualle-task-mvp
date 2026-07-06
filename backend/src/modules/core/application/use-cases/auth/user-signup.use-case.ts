@@ -11,7 +11,11 @@ export class UserSignupUseCase {
     private readonly hashService: IHashService,
   ) {}
 
-  async execute(input: { name: string; email: string; password: string }): Promise<void> {
+  async execute(input: {
+    name: string;
+    email: string;
+    password: string;
+  }): Promise<void> {
     const existing = await this.userRepo.findByEmail(input.email);
     if (existing) {
       throw new Error('Email already in use');

@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { v4 as uuid } from 'uuid';
-import { ITaskRepository, TaskFilterParams } from '../../../domain/repositories/task.repository';
+import {
+  ITaskRepository,
+  TaskFilterParams,
+} from '../../../domain/repositories/task.repository';
 import { Task } from '../../../domain/entities/task.entity';
 import { User } from '../../../domain/entities/user.entity';
 import { Comment } from '../../../domain/entities/comment.entity';
@@ -136,14 +139,28 @@ export class TaskTypeormRepository implements ITaskRepository {
       orm.assignees?.map((a) => a.id) ?? [],
       orm.comments?.map((c) => c.id) ?? [],
       orm.creator
-        ? new User(orm.creator.id, orm.creator.email, '', orm.creator.name, orm.creator.createdAt, orm.creator.updatedAt)
+        ? new User(
+            orm.creator.id,
+            orm.creator.email,
+            '',
+            orm.creator.name,
+            orm.creator.createdAt,
+            orm.creator.updatedAt,
+          )
         : undefined,
       orm.assignees?.map(
         (a) => new User(a.id, a.email, '', a.name, a.createdAt, a.updatedAt),
       ),
       orm.comments?.map(
         (c) =>
-          new Comment(c.id, c.content, c.taskId, c.authorId, c.createdAt, c.updatedAt),
+          new Comment(
+            c.id,
+            c.content,
+            c.taskId,
+            c.authorId,
+            c.createdAt,
+            c.updatedAt,
+          ),
       ),
     );
   }

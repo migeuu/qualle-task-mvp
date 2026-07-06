@@ -41,7 +41,11 @@ describe('CreateTaskUseCase', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useCase = new CreateTaskUseCase(mockTaskRepo as any, mockUserRepo as any, mockEventBus as any);
+    useCase = new CreateTaskUseCase(
+      mockTaskRepo as any,
+      mockUserRepo as any,
+      mockEventBus,
+    );
   });
 
   it('should create a task with default status and priority', async () => {
@@ -49,7 +53,10 @@ describe('CreateTaskUseCase', () => {
     const savedTask = makeTask();
     mockTaskRepo.create.mockResolvedValue(savedTask);
 
-    const result = await useCase.execute({ creatorId: 'creator-1', title: 'New Task' });
+    const result = await useCase.execute({
+      creatorId: 'creator-1',
+      title: 'New Task',
+    });
 
     expect(result.title).toBe('Test Task');
     expect(result.status).toBe('TODO');
@@ -70,7 +77,10 @@ describe('CreateTaskUseCase', () => {
 
   it('should create a task with custom status and priority', async () => {
     mockUserRepo.findById.mockResolvedValue(makeUser('creator-1'));
-    const savedTask = makeTask({ status: TaskStatus.DONE, priority: TaskPriority.HIGH });
+    const savedTask = makeTask({
+      status: TaskStatus.DONE,
+      priority: TaskPriority.HIGH,
+    });
     mockTaskRepo.create.mockResolvedValue(savedTask);
 
     const result = await useCase.execute({
@@ -88,12 +98,14 @@ describe('CreateTaskUseCase', () => {
 describe('UpdateTaskUseCase', () => {
   const mockTaskRepo = { findById: vi.fn(), save: vi.fn() };
   const mockEventBus = { publish: vi.fn() };
+  const mockAuthz = { ensureTaskOwner: vi.fn() };
 
   let useCase: UpdateTaskUseCase;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useCase = new UpdateTaskUseCase(mockTaskRepo as any, mockEventBus as any);
+    mockAuthz.ensureTaskOwner.mockResolvedValue(undefined);
+    useCase = new UpdateTaskUseCase(mockTaskRepo as any, mockEventBus, mockAuthz as any);
   });
 
   it('should update task title', async () => {
@@ -102,7 +114,11 @@ describe('UpdateTaskUseCase', () => {
     const updated = makeTask({ title: 'Updated Title' });
     mockTaskRepo.save.mockResolvedValue(updated);
 
-    const result = await useCase.execute({ taskId: 'task-1', userId: 'creator-1', title: 'Updated Title' });
+    const result = await useCase.execute({
+      taskId: 'task-1',
+      userId: 'creator-1',
+      title: 'Updated Title',
+    });
 
     expect(result.title).toBe('Updated Title');
     expect(mockTaskRepo.save).toHaveBeenCalledTimes(1);
@@ -110,15 +126,15 @@ describe('UpdateTaskUseCase', () => {
   });
 
   it('should throw when task not found', async () => {
-    mockTaskRepo.findById.mockResolvedValue(null);
+    mockAuthz.ensureTaskOwner.mockRejectedValueOnce(new Error('Task not found'));
 
     await expect(
       useCase.execute({ taskId: 'nonexistent', userId: 'user-1', title: 'X' }),
-    ).rejects.toThrow('Resource not found');
+    ).rejects.toThrow('Task not found');
   });
 
   it('should throw when user is not the owner', async () => {
-    mockTaskRepo.findById.mockResolvedValue(makeTask({ creatorId: 'other-user' }));
+    mockAuthz.ensureTaskOwner.mockRejectedValueOnce(new Error('Not authorized'));
 
     await expect(
       useCase.execute({ taskId: 'task-1', userId: 'intruder', title: 'X' }),
@@ -126,12 +142,23 @@ describe('UpdateTaskUseCase', () => {
   });
 
   it('should preserve unchanged fields', async () => {
-    const original = makeTask({ description: 'Original desc', priority: TaskPriority.LOW });
+    const original = makeTask({
+      description: 'Original desc',
+      priority: TaskPriority.LOW,
+    });
     mockTaskRepo.findById.mockResolvedValue(original);
-    const saved = makeTask({ title: 'New Title', description: 'Original desc', priority: TaskPriority.LOW });
+    const saved = makeTask({
+      title: 'New Title',
+      description: 'Original desc',
+      priority: TaskPriority.LOW,
+    });
     mockTaskRepo.save.mockResolvedValue(saved);
 
-    const result = await useCase.execute({ taskId: 'task-1', userId: 'creator-1', title: 'New Title' });
+    const result = await useCase.execute({
+      taskId: 'task-1',
+      userId: 'creator-1',
+      title: 'New Title',
+    });
 
     expect(result.description).toBe('Original desc');
     expect(result.priority).toBe('LOW');
@@ -142,7 +169,11 @@ describe('UpdateTaskUseCase', () => {
     mockTaskRepo.findById.mockResolvedValue(original);
     mockTaskRepo.save.mockResolvedValue(makeTask());
 
-    await useCase.execute({ taskId: 'task-1', userId: 'creator-1', title: 'New Title' });
+    await useCase.execute({
+      taskId: 'task-1',
+      userId: 'creator-1',
+      title: 'New Title',
+    });
 
     const event: TaskEventVO = mockEventBus.publish.mock.calls[0][0];
     expect(event.affectedUserIds).toContain('creator-1');
@@ -153,63 +184,87 @@ describe('UpdateTaskUseCase', () => {
 
 describe('DeleteTaskUseCase', () => {
   const mockTaskRepo = { findById: vi.fn(), delete: vi.fn() };
+  const mockAuthz = { ensureTaskOwner: vi.fn() };
 
   let useCase: DeleteTaskUseCase;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useCase = new DeleteTaskUseCase(mockTaskRepo as any);
+    mockAuthz.ensureTaskOwner.mockResolvedValue(undefined);
+    useCase = new DeleteTaskUseCase(mockTaskRepo as any, mockAuthz as any);
   });
 
   it('should delete a task', async () => {
-    mockTaskRepo.findById.mockResolvedValue(makeTask());
-
-    await useCase.execute('task-1');
+    await useCase.execute({ taskId: 'task-1', userId: 'creator-1' });
 
     expect(mockTaskRepo.delete).toHaveBeenCalledWith('task-1');
   });
 
   it('should throw when task not found', async () => {
-    mockTaskRepo.findById.mockResolvedValue(null);
+    mockAuthz.ensureTaskOwner.mockRejectedValueOnce(new Error('Task not found'));
 
-    await expect(useCase.execute('nonexistent')).rejects.toThrow('Resource not found');
+    await expect(
+      useCase.execute({ taskId: 'nonexistent', userId: 'user-1' }),
+    ).rejects.toThrow('Task not found');
   });
 });
 
 describe('AssignTaskUseCase', () => {
-  const mockTaskRepo = { findByIdWithAssignees: vi.fn(), replaceAssignees: vi.fn() };
+  const mockTaskRepo = {
+    findByIdWithAssignees: vi.fn(),
+    replaceAssignees: vi.fn(),
+  };
   const mockUserRepo = { findById: vi.fn() };
   const mockEventBus = { publish: vi.fn() };
+  const mockAuthz = { ensureCanAssign: vi.fn() };
 
   let useCase: AssignTaskUseCase;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useCase = new AssignTaskUseCase(mockTaskRepo as any, mockUserRepo as any, mockEventBus as any);
+    mockAuthz.ensureCanAssign.mockResolvedValue(undefined);
+    useCase = new AssignTaskUseCase(
+      mockTaskRepo as any,
+      mockUserRepo as any,
+      mockEventBus,
+      mockAuthz as any,
+    );
   });
 
   it('should assign users to a task', async () => {
     const task = makeTask({ creatorId: 'creator-1' });
     mockTaskRepo.findByIdWithAssignees.mockResolvedValue(task);
     mockTaskRepo.findByIdWithAssignees.mockResolvedValueOnce(task);
-    mockTaskRepo.findByIdWithAssignees.mockResolvedValueOnce(makeTask({ assigneeIds: ['user-a'] }));
+    mockTaskRepo.findByIdWithAssignees.mockResolvedValueOnce(
+      makeTask({ assigneeIds: ['user-a'] }),
+    );
     mockUserRepo.findById.mockResolvedValue(makeUser('user-a'));
 
-    const result = await useCase.execute({ taskId: 'task-1', loggedUserId: 'creator-1', assigneeIds: ['user-a'] });
+    const result = await useCase.execute({
+      taskId: 'task-1',
+      loggedUserId: 'creator-1',
+      assigneeIds: ['user-a'],
+    });
 
     expect(result).toBeDefined();
-    expect(mockTaskRepo.replaceAssignees).toHaveBeenCalledWith('task-1', ['user-a']);
+    expect(mockTaskRepo.replaceAssignees).toHaveBeenCalledWith('task-1', [
+      'user-a',
+    ]);
     expect(mockEventBus.publish).toHaveBeenCalledTimes(1);
     const event: TaskEventVO = mockEventBus.publish.mock.calls[0][0];
     expect(event.eventType).toBe('TASK_ASSIGNED');
   });
 
   it('should throw when task not found', async () => {
-    mockTaskRepo.findByIdWithAssignees.mockResolvedValue(null);
+    mockAuthz.ensureCanAssign.mockRejectedValueOnce(new Error('Task not found'));
 
     await expect(
-      useCase.execute({ taskId: 'nonexistent', loggedUserId: 'user-1', assigneeIds: ['user-a'] }),
-    ).rejects.toThrow('Resource not found');
+      useCase.execute({
+        taskId: 'nonexistent',
+        loggedUserId: 'user-1',
+        assigneeIds: ['user-a'],
+      }),
+    ).rejects.toThrow('Task not found');
   });
 
   it('should throw when assignee user does not exist', async () => {
@@ -217,7 +272,11 @@ describe('AssignTaskUseCase', () => {
     mockUserRepo.findById.mockResolvedValueOnce(null);
 
     await expect(
-      useCase.execute({ taskId: 'task-1', loggedUserId: 'user-1', assigneeIds: ['nonexistent'] }),
+      useCase.execute({
+        taskId: 'task-1',
+        loggedUserId: 'user-1',
+        assigneeIds: ['nonexistent'],
+      }),
     ).rejects.toThrow('Resource not found');
   });
 });
@@ -227,20 +286,34 @@ describe('AddTaskCommentUseCase', () => {
   const mockUserRepo = { findById: vi.fn() };
   const mockCommentRepo = { create: vi.fn() };
   const mockEventBus = { publish: vi.fn() };
+  const mockAuthz = { ensureTaskParticipant: vi.fn() };
 
   let useCase: AddTaskCommentUseCase;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useCase = new AddTaskCommentUseCase(mockTaskRepo as any, mockUserRepo as any, mockCommentRepo as any, mockEventBus as any);
+    mockAuthz.ensureTaskParticipant.mockResolvedValue(undefined);
+    useCase = new AddTaskCommentUseCase(
+      mockTaskRepo as any,
+      mockUserRepo as any,
+      mockCommentRepo as any,
+      mockEventBus,
+      mockAuthz as any,
+    );
   });
 
   it('should add a comment to a task', async () => {
-    mockTaskRepo.findByIdWithAssignees.mockResolvedValue(makeTask({ assigneeIds: ['user-b'] }));
+    mockTaskRepo.findByIdWithAssignees.mockResolvedValue(
+      makeTask({ assigneeIds: ['user-b'] }),
+    );
     mockUserRepo.findById.mockResolvedValue(makeUser('user-a'));
     mockTaskRepo.findById.mockResolvedValue(makeTask());
 
-    const result = await useCase.execute({ taskId: 'task-1', userId: 'user-a', content: 'Nice work!' });
+    const result = await useCase.execute({
+      taskId: 'task-1',
+      userId: 'user-a',
+      content: 'Nice work!',
+    });
 
     expect(result).toBeDefined();
     expect(mockCommentRepo.create).toHaveBeenCalledTimes(1);
@@ -252,11 +325,15 @@ describe('AddTaskCommentUseCase', () => {
   });
 
   it('should throw when task not found', async () => {
-    mockTaskRepo.findByIdWithAssignees.mockResolvedValue(null);
+    mockAuthz.ensureTaskParticipant.mockRejectedValueOnce(new Error('Task not found'));
 
     await expect(
-      useCase.execute({ taskId: 'nonexistent', userId: 'user-a', content: 'Test' }),
-    ).rejects.toThrow('Resource not found');
+      useCase.execute({
+        taskId: 'nonexistent',
+        userId: 'user-a',
+        content: 'Test',
+      }),
+    ).rejects.toThrow('Task not found');
   });
 
   it('should throw when author not found', async () => {
@@ -264,16 +341,26 @@ describe('AddTaskCommentUseCase', () => {
     mockUserRepo.findById.mockResolvedValue(null);
 
     await expect(
-      useCase.execute({ taskId: 'task-1', userId: 'nonexistent', content: 'Test' }),
+      useCase.execute({
+        taskId: 'task-1',
+        userId: 'nonexistent',
+        content: 'Test',
+      }),
     ).rejects.toThrow('Resource not found');
   });
 
   it('should publish event with affected users', async () => {
-    mockTaskRepo.findByIdWithAssignees.mockResolvedValue(makeTask({ creatorId: 'creator-1', assigneeIds: ['user-b'] }));
+    mockTaskRepo.findByIdWithAssignees.mockResolvedValue(
+      makeTask({ creatorId: 'creator-1', assigneeIds: ['user-b'] }),
+    );
     mockUserRepo.findById.mockResolvedValue(makeUser('user-a'));
     mockTaskRepo.findById.mockResolvedValue(makeTask());
 
-    await useCase.execute({ taskId: 'task-1', userId: 'user-a', content: 'Test' });
+    await useCase.execute({
+      taskId: 'task-1',
+      userId: 'user-a',
+      content: 'Test',
+    });
 
     const event: TaskEventVO = mockEventBus.publish.mock.calls[0][0];
     expect(event.eventType).toBe('TASK_NEW_COMMENT');
@@ -304,7 +391,9 @@ describe('FindTaskDetailsUseCase', () => {
   it('should throw when task not found', async () => {
     mockTaskRepo.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('nonexistent')).rejects.toThrow('Resource not found');
+    await expect(useCase.execute('nonexistent')).rejects.toThrow(
+      'Resource not found',
+    );
   });
 });
 
@@ -334,7 +423,9 @@ describe('FindTasksPaginatedUseCase', () => {
 
     await useCase.execute(1, 10, { status: TaskStatus.DONE });
 
-    expect(mockTaskRepo.findAll).toHaveBeenCalledWith(1, 10, { status: TaskStatus.DONE });
+    expect(mockTaskRepo.findAll).toHaveBeenCalledWith(1, 10, {
+      status: TaskStatus.DONE,
+    });
   });
 
   it('should return empty results', async () => {

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ITaskRepository } from '../../../domain/repositories/task.repository';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { ITaskEventBus } from '../../services/task-event-bus.service';
+import { AuthorizationService } from '../../services/authorization.service';
 import { TaskDto } from '../../dtos/task.dto';
 import { TaskMapper } from '../../mappers/task.mapper';
 import { TaskEventVO } from '../../../domain/value-objects/task-event.vo';
@@ -12,6 +13,7 @@ export class AssignTaskUseCase {
     private readonly taskRepo: ITaskRepository,
     private readonly userRepo: IUserRepository,
     private readonly taskEventBus: ITaskEventBus,
+    private readonly authz: AuthorizationService,
   ) {}
 
   async execute(input: {
@@ -19,6 +21,8 @@ export class AssignTaskUseCase {
     loggedUserId: string;
     assigneeIds: string[];
   }): Promise<TaskDto> {
+    await this.authz.ensureCanAssign(input.taskId, input.loggedUserId);
+
     const task = await this.taskRepo.findByIdWithAssignees(input.taskId);
     if (!task) {
       throw new Error('Resource not found');
@@ -37,7 +41,12 @@ export class AssignTaskUseCase {
 
     const affectedUsers = [...new Set([task.creatorId, ...input.assigneeIds])];
     this.taskEventBus.publish(
-      new TaskEventVO(input.taskId, input.loggedUserId, 'TASK_ASSIGNED', affectedUsers),
+      new TaskEventVO(
+        input.taskId,
+        input.loggedUserId,
+        'TASK_ASSIGNED',
+        affectedUsers,
+      ),
     );
 
     return TaskMapper.toDto(updated!);

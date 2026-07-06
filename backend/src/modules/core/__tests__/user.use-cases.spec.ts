@@ -29,7 +29,9 @@ describe('FindUserDetailsUseCase', () => {
   it('should throw when user not found', async () => {
     mockUserRepo.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('nonexistent')).rejects.toThrow('Resource not found');
+    await expect(useCase.execute('nonexistent')).rejects.toThrow(
+      'Resource not found',
+    );
   });
 });
 
@@ -44,7 +46,10 @@ describe('FindUsersPaginatedUseCase', () => {
   });
 
   it('should return paginated users', async () => {
-    mockUserRepo.findAll.mockResolvedValue({ data: [makeUser('user-1'), makeUser('user-2')], total: 2 });
+    mockUserRepo.findAll.mockResolvedValue({
+      data: [makeUser('user-1'), makeUser('user-2')],
+      total: 2,
+    });
 
     const result = await useCase.execute(1, 10);
 

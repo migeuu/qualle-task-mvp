@@ -48,8 +48,12 @@ import { SeedModule } from './seed/seed.module';
             const authorization = ctx.connectionParams?.Authorization as string;
             if (authorization) {
               try {
-                const jwtService = new JwtService({ secret: process.env.JWT_SECRET! });
-                const payload = jwtService.verify(authorization.replace('Bearer ', ''));
+                const jwtService = new JwtService({
+                  secret: process.env.JWT_SECRET!,
+                });
+                const payload = jwtService.verify(
+                  authorization.replace('Bearer ', ''),
+                );
                 return { user: payload, authorization };
               } catch {
                 throw new Error('Unauthorized');

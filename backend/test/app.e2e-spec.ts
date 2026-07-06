@@ -23,20 +23,29 @@ describe('REST API (e2e)', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [UserTypeormEntity, TaskTypeormEntity, CommentTypeormEntity],
+          entities: [
+            UserTypeormEntity,
+            TaskTypeormEntity,
+            CommentTypeormEntity,
+          ],
           synchronize: true,
           dropSchema: true,
         }),
         CoreModule,
       ],
     })
-      .overrideProvider(TaskResolver).useValue({})
-      .overrideProvider(AuthResolver).useValue({})
-      .overrideProvider(CommentResolver).useValue({})
+      .overrideProvider(TaskResolver)
+      .useValue({})
+      .overrideProvider(AuthResolver)
+      .useValue({})
+      .overrideProvider(CommentResolver)
+      .useValue({})
       .compile();
 
     app = m.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ transform: true, whitelist: true }),
+    );
     await app.init();
   });
 

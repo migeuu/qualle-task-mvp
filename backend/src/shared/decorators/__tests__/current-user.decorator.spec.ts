@@ -39,11 +39,15 @@ describe('extractUserFromContext', () => {
         req: { user: mockUser },
       }),
     };
-    vi.mocked(GqlExecutionContext.create).mockReturnValue(mockGqlContext as any);
+    vi.mocked(GqlExecutionContext.create).mockReturnValue(
+      mockGqlContext as any,
+    );
 
     const result = extractUserFromContext(undefined, mockExecutionContext);
 
-    expect(GqlExecutionContext.create).toHaveBeenCalledWith(mockExecutionContext);
+    expect(GqlExecutionContext.create).toHaveBeenCalledWith(
+      mockExecutionContext,
+    );
     expect(result).toEqual(mockUser);
   });
 
@@ -53,7 +57,9 @@ describe('extractUserFromContext', () => {
         req: {},
       }),
     };
-    vi.mocked(GqlExecutionContext.create).mockReturnValue(mockGqlContext as any);
+    vi.mocked(GqlExecutionContext.create).mockReturnValue(
+      mockGqlContext as any,
+    );
 
     const result = extractUserFromContext(undefined, mockExecutionContext);
 
@@ -64,7 +70,9 @@ describe('extractUserFromContext', () => {
     const mockGqlContext = {
       getContext: vi.fn().mockReturnValue({}),
     };
-    vi.mocked(GqlExecutionContext.create).mockReturnValue(mockGqlContext as any);
+    vi.mocked(GqlExecutionContext.create).mockReturnValue(
+      mockGqlContext as any,
+    );
 
     const result = extractUserFromContext(undefined, mockExecutionContext);
 

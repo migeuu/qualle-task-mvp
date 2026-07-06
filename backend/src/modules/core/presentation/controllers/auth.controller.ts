@@ -1,5 +1,18 @@
-import { Controller, Post, Get, Body, Req, UseGuards, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Req,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../../../../shared/guards/jwt-auth.guard';
 import { Public } from '../../../../shared/decorators/public.decorator';
@@ -34,7 +47,11 @@ export class AuthController {
   @Public()
   @Post('login')
   @ApiOperation({ summary: 'Login with email and password' })
-  @ApiResponse({ status: 200, description: 'Returns accessToken and refreshToken', type: AuthPayload })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns accessToken and refreshToken',
+    type: AuthPayload,
+  })
   async login(@Body() input: LoginInput): Promise<AuthPayload> {
     return this.loginUC.execute(input);
   }

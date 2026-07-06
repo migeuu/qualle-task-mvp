@@ -58,9 +58,34 @@ export class TaskResolver {
       orm.priority = dto.priority as any;
       orm.dueDate = dto.dueDate;
       orm.creatorId = dto.creator.id;
-      orm.creator = { id: dto.creator.id, email: dto.creator.email, name: dto.creator.name, createdAt: dto.creator.createdAt, updatedAt: dto.creator.updatedAt } as any;
-      orm.assignees = dto.assignees.map((a) => ({ id: a.id, email: a.email, name: a.name, createdAt: a.createdAt, updatedAt: a.updatedAt } as any));
-      orm.comments = dto.comments.map((c) => ({ id: c.id, content: c.content, taskId: c.taskId, authorId: c.authorId, createdAt: c.createdAt, updatedAt: c.updatedAt } as any));
+      orm.creator = {
+        id: dto.creator.id,
+        email: dto.creator.email,
+        name: dto.creator.name,
+        createdAt: dto.creator.createdAt,
+        updatedAt: dto.creator.updatedAt,
+      } as any;
+      orm.assignees = dto.assignees.map(
+        (a) =>
+          ({
+            id: a.id,
+            email: a.email,
+            name: a.name,
+            createdAt: a.createdAt,
+            updatedAt: a.updatedAt,
+          }) as any,
+      );
+      orm.comments = dto.comments.map(
+        (c) =>
+          ({
+            id: c.id,
+            content: c.content,
+            taskId: c.taskId,
+            authorId: c.authorId,
+            createdAt: c.createdAt,
+            updatedAt: c.updatedAt,
+          }) as any,
+      );
       orm.createdAt = dto.createdAt;
       orm.updatedAt = dto.updatedAt;
       ormTasks.push(orm);
@@ -120,8 +145,11 @@ export class TaskResolver {
 
   @UseGuards(JwtAuthGuard)
   @Mutation(() => Boolean)
-  async deleteTask(@Args('input') input: DeleteTaskInput): Promise<boolean> {
-    await this.deleteTaskUC.execute(input.taskId);
+  async deleteTask(
+    @Args('input') input: DeleteTaskInput,
+    @CurrentUser() user: any,
+  ): Promise<boolean> {
+    await this.deleteTaskUC.execute({ taskId: input.taskId, userId: user.sub });
     return true;
   }
 
@@ -142,7 +170,8 @@ export class TaskResolver {
 
   @Subscription(() => TaskNotificationOutput, {
     filter: (payload: any, _variables: any, context: any) => {
-      const event = payload.taskUpdated || payload.taskAssigned || payload.taskNewComment;
+      const event =
+        payload.taskUpdated || payload.taskAssigned || payload.taskNewComment;
       if (!event) return false;
       return event.affectedUserIds?.includes(context?.user?.sub) ?? false;
     },
@@ -153,7 +182,8 @@ export class TaskResolver {
 
   @Subscription(() => TaskNotificationOutput, {
     filter: (payload: any, _variables: any, context: any) => {
-      const event = payload.taskUpdated || payload.taskAssigned || payload.taskNewComment;
+      const event =
+        payload.taskUpdated || payload.taskAssigned || payload.taskNewComment;
       if (!event) return false;
       return event.affectedUserIds?.includes(context?.user?.sub) ?? false;
     },
@@ -164,7 +194,8 @@ export class TaskResolver {
 
   @Subscription(() => TaskNotificationOutput, {
     filter: (payload: any, _variables: any, context: any) => {
-      const event = payload.taskUpdated || payload.taskAssigned || payload.taskNewComment;
+      const event =
+        payload.taskUpdated || payload.taskAssigned || payload.taskNewComment;
       if (!event) return false;
       return event.affectedUserIds?.includes(context?.user?.sub) ?? false;
     },

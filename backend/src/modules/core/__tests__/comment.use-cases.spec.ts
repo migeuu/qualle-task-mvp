@@ -32,23 +32,42 @@ describe('AddTaskCommentUseCase', () => {
   const mockUserRepo = { findById: vi.fn() };
   const mockCommentRepo = { create: vi.fn() };
   const mockEventBus = { publish: vi.fn() };
+  const mockAuthz = { ensureTaskParticipant: vi.fn() };
 
   let useCase: AddTaskCommentUseCase;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useCase = new AddTaskCommentUseCase(mockTaskRepo as any, mockUserRepo as any, mockCommentRepo as any, mockEventBus as any);
+    mockAuthz.ensureTaskParticipant.mockResolvedValue(undefined);
+    useCase = new AddTaskCommentUseCase(
+      mockTaskRepo as any,
+      mockUserRepo as any,
+      mockCommentRepo as any,
+      mockEventBus,
+      mockAuthz as any,
+    );
   });
 
   it('should add a comment to a task and return updated task DTO', async () => {
     const task = makeTask({ creatorId: 'creator-1', assigneeIds: ['user-b'] });
     mockTaskRepo.findByIdWithAssignees.mockResolvedValue(task);
     mockUserRepo.findById.mockResolvedValue(makeUser('user-a'));
-    const persistedComment = new Comment('comment-1', 'Nice work!', 'task-1', 'user-a', new Date(), new Date());
+    const persistedComment = new Comment(
+      'comment-1',
+      'Nice work!',
+      'task-1',
+      'user-a',
+      new Date(),
+      new Date(),
+    );
     mockCommentRepo.create.mockResolvedValue(persistedComment);
     mockTaskRepo.findById.mockResolvedValue(makeTask());
 
-    const result = await useCase.execute({ taskId: 'task-1', userId: 'user-a', content: 'Nice work!' });
+    const result = await useCase.execute({
+      taskId: 'task-1',
+      userId: 'user-a',
+      content: 'Nice work!',
+    });
 
     expect(result).toBeDefined();
     expect(mockCommentRepo.create).toHaveBeenCalledTimes(1);
@@ -63,10 +82,16 @@ describe('AddTaskCommentUseCase', () => {
     const task = makeTask();
     mockTaskRepo.findByIdWithAssignees.mockResolvedValue(task);
     mockUserRepo.findById.mockResolvedValue(makeUser('user-a'));
-    mockCommentRepo.create.mockResolvedValue(new Comment('c1', 'Test', 'task-1', 'user-a', new Date(), new Date()));
+    mockCommentRepo.create.mockResolvedValue(
+      new Comment('c1', 'Test', 'task-1', 'user-a', new Date(), new Date()),
+    );
     mockTaskRepo.findById.mockResolvedValue(makeTask());
 
-    await useCase.execute({ taskId: 'task-1', userId: 'user-a', content: 'Test' });
+    await useCase.execute({
+      taskId: 'task-1',
+      userId: 'user-a',
+      content: 'Test',
+    });
 
     expect(mockEventBus.publish).toHaveBeenCalledTimes(1);
     const event: TaskEventVO = mockEventBus.publish.mock.calls[0][0];
@@ -76,13 +101,22 @@ describe('AddTaskCommentUseCase', () => {
   });
 
   it('should include creator and assignees in affected users', async () => {
-    const task = makeTask({ creatorId: 'creator-1', assigneeIds: ['user-b', 'user-c'] });
+    const task = makeTask({
+      creatorId: 'creator-1',
+      assigneeIds: ['user-b', 'user-c'],
+    });
     mockTaskRepo.findByIdWithAssignees.mockResolvedValue(task);
     mockUserRepo.findById.mockResolvedValue(makeUser('user-a'));
-    mockCommentRepo.create.mockResolvedValue(new Comment('c1', 'Test', 'task-1', 'user-a', new Date(), new Date()));
+    mockCommentRepo.create.mockResolvedValue(
+      new Comment('c1', 'Test', 'task-1', 'user-a', new Date(), new Date()),
+    );
     mockTaskRepo.findById.mockResolvedValue(makeTask());
 
-    await useCase.execute({ taskId: 'task-1', userId: 'user-a', content: 'Test' });
+    await useCase.execute({
+      taskId: 'task-1',
+      userId: 'user-a',
+      content: 'Test',
+    });
 
     const event: TaskEventVO = mockEventBus.publish.mock.calls[0][0];
     expect(event.affectedUserIds).toContain('creator-1');
@@ -91,25 +125,40 @@ describe('AddTaskCommentUseCase', () => {
   });
 
   it('should deduplicate affected users', async () => {
-    const task = makeTask({ creatorId: 'creator-1', assigneeIds: ['creator-1'] });
+    const task = makeTask({
+      creatorId: 'creator-1',
+      assigneeIds: ['creator-1'],
+    });
     mockTaskRepo.findByIdWithAssignees.mockResolvedValue(task);
     mockUserRepo.findById.mockResolvedValue(makeUser('user-a'));
-    mockCommentRepo.create.mockResolvedValue(new Comment('c1', 'Test', 'task-1', 'user-a', new Date(), new Date()));
+    mockCommentRepo.create.mockResolvedValue(
+      new Comment('c1', 'Test', 'task-1', 'user-a', new Date(), new Date()),
+    );
     mockTaskRepo.findById.mockResolvedValue(makeTask());
 
-    await useCase.execute({ taskId: 'task-1', userId: 'user-a', content: 'Test' });
+    await useCase.execute({
+      taskId: 'task-1',
+      userId: 'user-a',
+      content: 'Test',
+    });
 
     const event: TaskEventVO = mockEventBus.publish.mock.calls[0][0];
-    const occurrences = event.affectedUserIds.filter((id) => id === 'creator-1').length;
+    const occurrences = event.affectedUserIds.filter(
+      (id) => id === 'creator-1',
+    ).length;
     expect(occurrences).toBe(1);
   });
 
   it('should throw when task is not found', async () => {
-    mockTaskRepo.findByIdWithAssignees.mockResolvedValue(null);
+    mockAuthz.ensureTaskParticipant.mockRejectedValueOnce(new Error('Task not found'));
 
     await expect(
-      useCase.execute({ taskId: 'nonexistent', userId: 'user-a', content: 'Test' }),
-    ).rejects.toThrow('Resource not found');
+      useCase.execute({
+        taskId: 'nonexistent',
+        userId: 'user-a',
+        content: 'Test',
+      }),
+    ).rejects.toThrow('Task not found');
   });
 
   it('should throw when comment author does not exist', async () => {
@@ -117,7 +166,11 @@ describe('AddTaskCommentUseCase', () => {
     mockUserRepo.findById.mockResolvedValue(null);
 
     await expect(
-      useCase.execute({ taskId: 'task-1', userId: 'nonexistent', content: 'Test' }),
+      useCase.execute({
+        taskId: 'task-1',
+        userId: 'nonexistent',
+        content: 'Test',
+      }),
     ).rejects.toThrow('Resource not found');
   });
 
@@ -125,11 +178,17 @@ describe('AddTaskCommentUseCase', () => {
     const task = makeTask();
     mockTaskRepo.findByIdWithAssignees.mockResolvedValue(task);
     mockUserRepo.findById.mockResolvedValue(makeUser('user-a'));
-    mockCommentRepo.create.mockResolvedValue(new Comment('c1', 'Test', 'task-1', 'user-a', new Date(), new Date()));
+    mockCommentRepo.create.mockResolvedValue(
+      new Comment('c1', 'Test', 'task-1', 'user-a', new Date(), new Date()),
+    );
     const updatedTask = makeTask();
     mockTaskRepo.findById.mockResolvedValue(updatedTask);
 
-    const result = await useCase.execute({ taskId: 'task-1', userId: 'user-a', content: 'Test' });
+    const result = await useCase.execute({
+      taskId: 'task-1',
+      userId: 'user-a',
+      content: 'Test',
+    });
 
     expect(mockTaskRepo.findById).toHaveBeenCalledWith('task-1');
     expect(result).toBeDefined();
@@ -158,7 +217,14 @@ describe('CommentMapper', () => {
   });
 
   it('should map Comment with different values', () => {
-    const comment = new Comment('c2', 'Another note', 'task-2', 'user-b', new Date('2024-06-01'), new Date('2024-06-01'));
+    const comment = new Comment(
+      'c2',
+      'Another note',
+      'task-2',
+      'user-b',
+      new Date('2024-06-01'),
+      new Date('2024-06-01'),
+    );
 
     const dto = CommentMapper.toDto(comment);
 

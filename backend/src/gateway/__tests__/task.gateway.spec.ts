@@ -6,8 +6,14 @@ import { TaskEventVO } from '../../modules/core/domain/value-objects/task-event.
 describe('TaskGateway', () => {
   let gateway: TaskGateway;
   let jwtService: Partial<JwtService>;
-  let mockServer: { to: ReturnType<typeof vi.fn>; emit: ReturnType<typeof vi.fn> };
-  let mockSocket: Partial<AuthenticatedSocket> & { join: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> };
+  let mockServer: {
+    to: ReturnType<typeof vi.fn>;
+    emit: ReturnType<typeof vi.fn>;
+  };
+  let mockSocket: Partial<AuthenticatedSocket> & {
+    join: ReturnType<typeof vi.fn>;
+    disconnect: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     jwtService = { verify: vi.fn() };
@@ -35,7 +41,10 @@ describe('TaskGateway', () => {
 
   describe('handleConnection', () => {
     it('should authenticate and join user room with valid token', async () => {
-      vi.spyOn(jwtService, 'verify').mockReturnValue({ sub: 'user-1', email: 'test@qualle.com' });
+      vi.spyOn(jwtService, 'verify').mockReturnValue({
+        sub: 'user-1',
+        email: 'test@qualle.com',
+      });
 
       await gateway.handleConnection(mockSocket as AuthenticatedSocket);
 
@@ -46,7 +55,7 @@ describe('TaskGateway', () => {
     });
 
     it('should disconnect if no token provided', async () => {
-      mockSocket.handshake!.auth = {} as any;
+      mockSocket.handshake!.auth = {};
       mockSocket.handshake!.query = {};
 
       await gateway.handleConnection(mockSocket as AuthenticatedSocket);
@@ -55,7 +64,7 @@ describe('TaskGateway', () => {
     });
 
     it('should authenticate with token from query string', async () => {
-      mockSocket.handshake!.auth = {} as any;
+      mockSocket.handshake!.auth = {};
       mockSocket.handshake!.query = { token: 'query-token' };
       vi.spyOn(jwtService, 'verify').mockReturnValue({ sub: 'user-2' });
 
@@ -90,9 +99,15 @@ describe('TaskGateway', () => {
     it('should return pong with data and userId', () => {
       mockSocket.userId = 'user-1';
 
-      const result = gateway.handlePing(mockSocket as AuthenticatedSocket, { msg: 'hello' });
+      const result = gateway.handlePing(mockSocket as AuthenticatedSocket, {
+        msg: 'hello',
+      });
 
-      expect(result).toEqual({ event: 'pong', data: { msg: 'hello' }, userId: 'user-1' });
+      expect(result).toEqual({
+        event: 'pong',
+        data: { msg: 'hello' },
+        userId: 'user-1',
+      });
     });
 
     it('should return pong with undefined userId if not authenticated', () => {
@@ -106,7 +121,10 @@ describe('TaskGateway', () => {
 
   describe('handleTaskUpdated', () => {
     it('should emit task.update to each relevant user room', () => {
-      const event = new TaskEventVO('task-1', 'author-1', 'TASK_UPDATED', ['user-1', 'user-2']);
+      const event = new TaskEventVO('task-1', 'author-1', 'TASK_UPDATED', [
+        'user-1',
+        'user-2',
+      ]);
 
       gateway.handleTaskUpdated(event);
 
@@ -123,7 +141,9 @@ describe('TaskGateway', () => {
 
   describe('handleTaskAssigned', () => {
     it('should emit task.update to each relevant user room', () => {
-      const event = new TaskEventVO('task-1', 'author-1', 'TASK_ASSIGNED', ['user-3']);
+      const event = new TaskEventVO('task-1', 'author-1', 'TASK_ASSIGNED', [
+        'user-3',
+      ]);
 
       gateway.handleTaskAssigned(event);
 
@@ -138,7 +158,9 @@ describe('TaskGateway', () => {
 
   describe('handleNewComment', () => {
     it('should emit task.update for new comment to relevant users', () => {
-      const event = new TaskEventVO('task-1', 'author-1', 'TASK_NEW_COMMENT', ['user-1']);
+      const event = new TaskEventVO('task-1', 'author-1', 'TASK_NEW_COMMENT', [
+        'user-1',
+      ]);
 
       gateway.handleNewComment(event);
 
@@ -153,8 +175,14 @@ describe('TaskGateway', () => {
 
   describe('handleNotification', () => {
     it('should emit notification to specific user with timestamp', () => {
-      const event = new TaskEventVO('task-1', 'author-1', 'TASK_ASSIGNED', ['user-1']);
-      const payload = { type: 'notification', userId: 'user-1', payload: event };
+      const event = new TaskEventVO('task-1', 'author-1', 'TASK_ASSIGNED', [
+        'user-1',
+      ]);
+      const payload = {
+        type: 'notification',
+        userId: 'user-1',
+        payload: event,
+      };
 
       gateway.handleNotification(payload);
 

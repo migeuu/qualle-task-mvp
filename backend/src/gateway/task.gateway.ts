@@ -33,8 +33,7 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleConnection(client: AuthenticatedSocket) {
     try {
       const token =
-        client.handshake.auth?.token ||
-        client.handshake.query?.token;
+        client.handshake.auth?.token || client.handshake.query?.token;
 
       if (!token) {
         client.disconnect();
@@ -42,7 +41,7 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       const payload = this.jwtService.verify(
-        typeof token === 'string' ? token : token[0] as string,
+        typeof token === 'string' ? token : (token[0] as string),
       );
       client.userId = payload.sub;
       client.join(`user:${payload.sub}`);
@@ -98,7 +97,11 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @OnEvent('notification.*')
-  handleNotification(payload: { type: string; userId: string; payload: TaskEventVO }) {
+  handleNotification(payload: {
+    type: string;
+    userId: string;
+    payload: TaskEventVO;
+  }) {
     this.server.to(`user:${payload.userId}`).emit('notification', {
       taskId: payload.payload.taskId,
       eventAuthorId: payload.payload.eventAuthorId,

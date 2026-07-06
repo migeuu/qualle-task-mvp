@@ -1,5 +1,21 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, Req, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Get,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Req,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../../../../shared/guards/jwt-auth.guard';
 import { CreateTaskUseCase } from '../../application/use-cases/task/create-task.use-case';
@@ -29,7 +45,10 @@ export class TaskController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new task' })
-  async create(@Body() input: CreateTaskInput, @Req() req: Request): Promise<any> {
+  async create(
+    @Body() input: CreateTaskInput,
+    @Req() req: Request,
+  ): Promise<any> {
     const userId = (req as any).user?.sub;
     return this.createTaskUC.execute({ ...input, creatorId: userId });
   }
@@ -74,14 +93,21 @@ export class TaskController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a task' })
-  async remove(@Param('id') id: string): Promise<{ success: boolean }> {
-    await this.deleteTaskUC.execute(id);
+  async remove(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ): Promise<{ success: boolean }> {
+    const userId = (req as any).user?.sub;
+    await this.deleteTaskUC.execute({ taskId: id, userId });
     return { success: true };
   }
 
   @Post('assign')
   @ApiOperation({ summary: 'Assign users to a task' })
-  async assign(@Body() input: AssignTaskInput, @Req() req: Request): Promise<any> {
+  async assign(
+    @Body() input: AssignTaskInput,
+    @Req() req: Request,
+  ): Promise<any> {
     const userId = (req as any).user?.sub;
     return this.assignTaskUC.execute({ ...input, loggedUserId: userId });
   }

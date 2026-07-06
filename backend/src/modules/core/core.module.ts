@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PubSub } from 'graphql-subscriptions';
 import { registerEnumType } from '@nestjs/graphql';
+
+import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 
 import { UserTypeormEntity } from './infra/orm/entities/user.typeorm-entity';
 import { TaskTypeormEntity } from './infra/orm/entities/task.typeorm-entity';
@@ -30,6 +33,8 @@ import { FindTaskDetailsUseCase } from './application/use-cases/task/find-task-d
 import { FindTasksPaginatedUseCase } from './application/use-cases/task/find-tasks-paginated.use-case';
 import { AssignTaskUseCase } from './application/use-cases/task/assign-task.use-case';
 import { AddTaskCommentUseCase } from './application/use-cases/task/add-task-comment.use-case';
+
+import { AuthorizationService } from './application/services/authorization.service';
 
 import { NotifyTaskUpdateUseCase } from './application/use-cases/notification/notify-task-update.use-case';
 import { NotifyTaskAssignUseCase } from './application/use-cases/notification/notify-task-assign.use-case';
@@ -65,7 +70,11 @@ const tokenMappings = [
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserTypeormEntity, TaskTypeormEntity, CommentTypeormEntity]),
+    TypeOrmModule.forFeature([
+      UserTypeormEntity,
+      TaskTypeormEntity,
+      CommentTypeormEntity,
+    ]),
     JwtModule.register({
       secret: process.env.JWT_SECRET!,
       signOptions: { expiresIn: process.env.JWT_EXPIRATION || '1h' } as any,
@@ -79,11 +88,7 @@ const tokenMappings = [
       verboseMemoryLeak: true,
     }),
   ],
-  controllers: [
-    AuthController,
-    TaskController,
-    CommentController,
-  ],
+  controllers: [AuthController, TaskController, CommentController],
   providers: [
     pubSubProvider,
 
@@ -109,6 +114,8 @@ const tokenMappings = [
     AssignTaskUseCase,
     AddTaskCommentUseCase,
 
+    AuthorizationService,
+
     NotifyTaskUpdateUseCase,
     NotifyTaskAssignUseCase,
     NotifyTaskCommentUseCase,
@@ -118,6 +125,8 @@ const tokenMappings = [
     CommentResolver,
 
     ...tokenMappings,
+
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
   exports: [
     UserTypeormRepository,

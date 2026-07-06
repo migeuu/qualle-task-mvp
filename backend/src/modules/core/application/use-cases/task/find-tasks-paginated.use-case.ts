@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ITaskRepository, TaskFilterParams } from '../../../domain/repositories/task.repository';
+import {
+  ITaskRepository,
+  TaskFilterParams,
+} from '../../../domain/repositories/task.repository';
 import { TaskDto } from '../../dtos/task.dto';
 import { PaginatedResult } from '../../dtos/paginated-result.dto';
 import { TaskMapper } from '../../mappers/task.mapper';

@@ -20,7 +20,10 @@ export class UserLoginUseCase {
       throw new Error('Invalid credentials');
     }
 
-    const isValid = await this.hashService.compare(input.password, user.password);
+    const isValid = await this.hashService.compare(
+      input.password,
+      user.password,
+    );
     if (!isValid) {
       throw new Error('Invalid credentials');
     }

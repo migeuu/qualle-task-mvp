@@ -4,6 +4,7 @@ import { ITaskRepository } from '../../../domain/repositories/task.repository';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { ICommentRepository } from '../../../domain/repositories/comment.repository';
 import { ITaskEventBus } from '../../services/task-event-bus.service';
+import { AuthorizationService } from '../../services/authorization.service';
 import { Comment } from '../../../domain/entities/comment.entity';
 import { TaskDto } from '../../dtos/task.dto';
 import { TaskMapper } from '../../mappers/task.mapper';
@@ -16,6 +17,7 @@ export class AddTaskCommentUseCase {
     private readonly userRepo: IUserRepository,
     private readonly commentRepo: ICommentRepository,
     private readonly taskEventBus: ITaskEventBus,
+    private readonly authz: AuthorizationService,
   ) {}
 
   async execute(input: {
@@ -23,6 +25,8 @@ export class AddTaskCommentUseCase {
     userId: string;
     content: string;
   }): Promise<TaskDto> {
+    await this.authz.ensureTaskParticipant(input.taskId, input.userId);
+
     const task = await this.taskRepo.findByIdWithAssignees(input.taskId);
     if (!task) {
       throw new Error('Resource not found');
@@ -48,7 +52,12 @@ export class AddTaskCommentUseCase {
 
     const affectedUsers = [...new Set([task.creatorId, ...task.assigneeIds])];
     this.taskEventBus.publish(
-      new TaskEventVO(input.taskId, input.userId, 'TASK_NEW_COMMENT', affectedUsers),
+      new TaskEventVO(
+        input.taskId,
+        input.userId,
+        'TASK_NEW_COMMENT',
+        affectedUsers,
+      ),
     );
 
     return TaskMapper.toDto(updatedTask!);

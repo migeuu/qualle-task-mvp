@@ -38,6 +38,9 @@ export class CommentNotFoundException extends HttpException {
 
 export class NotAuthorizedToAssignException extends HttpException {
   constructor() {
-    super('Only the task creator can assign users to this task', HttpStatus.FORBIDDEN);
+    super(
+      'Only the task creator can assign users to this task',
+      HttpStatus.FORBIDDEN,
+    );
   }
 }

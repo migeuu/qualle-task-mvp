@@ -46,10 +46,21 @@ export class AuthResolver {
 
   @UseGuards(JwtAuthGuard)
   @Query(() => [UserTypeormEntity])
-  async users(@Args('input', { nullable: true }) input?: { page?: number; limit?: number; name?: string }): Promise<UserTypeormEntity[]> {
+  async users(
+    @Args('input', { nullable: true })
+    input?: {
+      page?: number;
+      limit?: number;
+      name?: string;
+    },
+  ): Promise<UserTypeormEntity[]> {
     const page = input?.page ?? 1;
     const limit = input?.limit ?? 10;
-    const result = await this.findUsersPaginatedUC.execute(page, limit, input?.name);
+    const result = await this.findUsersPaginatedUC.execute(
+      page,
+      limit,
+      input?.name,
+    );
     const entities: UserTypeormEntity[] = [];
     for (const dto of result.data) {
       const orm = new UserTypeormEntity();

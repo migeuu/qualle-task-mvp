@@ -1,4 +1,12 @@
-import { Controller, Post, Get, Body, Param, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../../../../shared/guards/jwt-auth.guard';
@@ -18,7 +26,10 @@ export class CommentController {
 
   @Post()
   @ApiOperation({ summary: 'Add a comment to a task' })
-  async create(@Body() input: CreateCommentInput, @Req() req: Request): Promise<any> {
+  async create(
+    @Body() input: CreateCommentInput,
+    @Req() req: Request,
+  ): Promise<any> {
     const userId = (req as any).user?.sub;
     return this.addCommentUC.execute({ ...input, userId });
   }

@@ -7,7 +7,10 @@ describe('Public decorator', () => {
       testMethod() {}
     }
 
-    const metadata = Reflect.getMetadata(IS_PUBLIC_KEY, TestClass.prototype.testMethod);
+    const metadata = Reflect.getMetadata(
+      IS_PUBLIC_KEY,
+      TestClass.prototype.testMethod,
+    );
     expect(metadata).toBe(true);
   });
 
@@ -31,8 +34,14 @@ describe('Public decorator', () => {
       notDecorated() {}
     }
 
-    const decorated = Reflect.getMetadata(IS_PUBLIC_KEY, TestClass.prototype.decorated);
-    const notDecorated = Reflect.getMetadata(IS_PUBLIC_KEY, TestClass.prototype.notDecorated);
+    const decorated = Reflect.getMetadata(
+      IS_PUBLIC_KEY,
+      TestClass.prototype.decorated,
+    );
+    const notDecorated = Reflect.getMetadata(
+      IS_PUBLIC_KEY,
+      TestClass.prototype.notDecorated,
+    );
 
     expect(decorated).toBe(true);
     expect(notDecorated).toBeUndefined();

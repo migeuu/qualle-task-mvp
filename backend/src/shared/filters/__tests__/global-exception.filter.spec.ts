@@ -1,5 +1,10 @@
 import { GlobalExceptionFilter } from '../global-exception.filter';
-import { HttpException, HttpStatus, ArgumentsHost, Logger } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  ArgumentsHost,
+  Logger,
+} from '@nestjs/common';
 import { GqlArgumentsHost } from '@nestjs/graphql';
 
 vi.mock('@nestjs/graphql', () => ({
@@ -20,7 +25,7 @@ describe('GlobalExceptionFilter', () => {
 
   beforeEach(() => {
     filter = new GlobalExceptionFilter();
-    mockHost = {} as ArgumentsHost;
+    mockHost = {};
     vi.mocked(GqlArgumentsHost.create).mockReturnValue({} as any);
   });
 
@@ -28,7 +33,9 @@ describe('GlobalExceptionFilter', () => {
     it('should rethrow HttpException', () => {
       const exception = new HttpException('Not found', HttpStatus.NOT_FOUND);
 
-      expect(() => filter.catch(exception, mockHost as ArgumentsHost)).toThrow(HttpException);
+      expect(() => filter.catch(exception, mockHost as ArgumentsHost)).toThrow(
+        HttpException,
+      );
     });
 
     it('should rethrow HttpException with object response', () => {
@@ -37,7 +44,9 @@ describe('GlobalExceptionFilter', () => {
         HttpStatus.BAD_REQUEST,
       );
 
-      expect(() => filter.catch(exception, mockHost as ArgumentsHost)).toThrow(HttpException);
+      expect(() => filter.catch(exception, mockHost as ArgumentsHost)).toThrow(
+        HttpException,
+      );
     });
   });
 
@@ -45,8 +54,12 @@ describe('GlobalExceptionFilter', () => {
     it('should convert regular Error to HttpException with Internal server error', () => {
       const error = new Error('Something went wrong');
 
-      expect(() => filter.catch(error, mockHost as ArgumentsHost)).toThrow(HttpException);
-      expect(() => filter.catch(error, mockHost as ArgumentsHost)).toThrow('Internal server error');
+      expect(() => filter.catch(error, mockHost as ArgumentsHost)).toThrow(
+        HttpException,
+      );
+      expect(() => filter.catch(error, mockHost as ArgumentsHost)).toThrow(
+        'Internal server error',
+      );
     });
 
     it('should convert Error without stack to HttpException', () => {
@@ -59,15 +72,23 @@ describe('GlobalExceptionFilter', () => {
 
       const error = new NoStackError();
 
-      expect(() => filter.catch(error, mockHost as ArgumentsHost)).toThrow(HttpException);
+      expect(() => filter.catch(error, mockHost as ArgumentsHost)).toThrow(
+        HttpException,
+      );
     });
   });
 
   describe('Unknown exception', () => {
     it('should convert non-Error exceptions to HttpException with Internal server error', () => {
-      expect(() => filter.catch('string error', mockHost as ArgumentsHost)).toThrow(HttpException);
-      expect(() => filter.catch('string error', mockHost as ArgumentsHost)).toThrow('Internal server error');
-      expect(() => filter.catch(42, mockHost as ArgumentsHost)).toThrow(HttpException);
+      expect(() =>
+        filter.catch('string error', mockHost as ArgumentsHost),
+      ).toThrow(HttpException);
+      expect(() =>
+        filter.catch('string error', mockHost as ArgumentsHost),
+      ).toThrow('Internal server error');
+      expect(() => filter.catch(42, mockHost as ArgumentsHost)).toThrow(
+        HttpException,
+      );
     });
   });
 });

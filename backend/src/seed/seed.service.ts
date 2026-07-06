@@ -4,12 +4,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserTypeormEntity } from '../modules/core/infra/orm/entities/user.typeorm-entity';
 import { TaskTypeormEntity } from '../modules/core/infra/orm/entities/task.typeorm-entity';
-import { TaskStatus, TaskPriority } from '../modules/core/domain/enums/task.enum';
+import {
+  TaskStatus,
+  TaskPriority,
+} from '../modules/core/domain/enums/task.enum';
 import { SeedResult } from './dto/seed-result.type';
 
 export class SeedAlreadyAppliedException extends HttpException {
   constructor() {
-    super('Seed has already been applied to this database', HttpStatus.CONFLICT);
+    super(
+      'Seed has already been applied to this database',
+      HttpStatus.CONFLICT,
+    );
   }
 }
 
@@ -78,7 +84,9 @@ export class SeedService {
     return users;
   }
 
-  private async createTasks(users: UserTypeormEntity[]): Promise<TaskTypeormEntity[]> {
+  private async createTasks(
+    users: UserTypeormEntity[],
+  ): Promise<TaskTypeormEntity[]> {
     const now = new Date();
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -86,7 +94,8 @@ export class SeedService {
     const seedTasks: SeedTask[] = [
       {
         title: 'Hire Miguel Marquiori',
-        description: "He's the perfect fit for this role. Seriously, look at that resume — it's basically a love letter to clean code.",
+        description:
+          "He's the perfect fit for this role. Seriously, look at that resume — it's basically a love letter to clean code.",
         status: TaskStatus.DONE,
         priority: TaskPriority.HIGH,
         creatorIndex: 0,
@@ -95,7 +104,8 @@ export class SeedService {
       },
       {
         title: 'Convince the coffee machine to make espresso faster',
-        description: 'The machine takes 47 seconds. We benchmarked it. This is unacceptable for a team that runs on caffeine and bad decisions.',
+        description:
+          'The machine takes 47 seconds. We benchmarked it. This is unacceptable for a team that runs on caffeine and bad decisions.',
         status: TaskStatus.IN_PROGRESS,
         priority: TaskPriority.HIGH,
         creatorIndex: 1,
@@ -104,7 +114,8 @@ export class SeedService {
       },
       {
         title: 'Figure out why the bug only happens on Fridays at 4:59 PM',
-        description: 'Production has been crashing every Friday right before the weekend. Coincidence? We think not. Suspect: the universe hates us.',
+        description:
+          'Production has been crashing every Friday right before the weekend. Coincidence? We think not. Suspect: the universe hates us.',
         status: TaskStatus.TODO,
         priority: TaskPriority.HIGH,
         creatorIndex: 2,
@@ -113,7 +124,8 @@ export class SeedService {
       },
       {
         title: 'Rename all variables to emojis for maximum readability',
-        description: 'Who needs descriptive names when you have 🔥, 💀, and 🚀? The future is now. Also Diego suggested this and we are concerned.',
+        description:
+          'Who needs descriptive names when you have 🔥, 💀, and 🚀? The future is now. Also Diego suggested this and we are concerned.',
         status: TaskStatus.CANCELLED,
         priority: TaskPriority.LOW,
         creatorIndex: 3,
@@ -122,7 +134,8 @@ export class SeedService {
       },
       {
         title: 'Write documentation that nobody will ever read',
-        description: 'We need at least 3 pages of docs so we can say "it\'s in the docs" when someone asks a question. Actually make it 5 pages. Go big.',
+        description:
+          'We need at least 3 pages of docs so we can say "it\'s in the docs" when someone asks a question. Actually make it 5 pages. Go big.',
         status: TaskStatus.TODO,
         priority: TaskPriority.LOW,
         creatorIndex: 0,
@@ -131,7 +144,8 @@ export class SeedService {
       },
       {
         title: 'Add a dark mode that is just the screen turned off',
-        description: 'Maximum contrast. Infinite battery life. Users will love it. It\'s also the most accessible dark mode ever conceived.',
+        description:
+          "Maximum contrast. Infinite battery life. Users will love it. It's also the most accessible dark mode ever conceived.",
         status: TaskStatus.TODO,
         priority: TaskPriority.MEDIUM,
         creatorIndex: 1,
@@ -139,7 +153,8 @@ export class SeedService {
       },
       {
         title: 'Implement a button that does nothing but sparks joy',
-        description: 'Marie Kondo meets UX design. The button won\'t trigger any action — it just sits there, looking beautiful, bringing happiness to the dashboard.',
+        description:
+          "Marie Kondo meets UX design. The button won't trigger any action — it just sits there, looking beautiful, bringing happiness to the dashboard.",
         status: TaskStatus.DONE,
         priority: TaskPriority.LOW,
         creatorIndex: 2,
@@ -148,7 +163,8 @@ export class SeedService {
       },
       {
         title: 'Blame the intern for the production outage',
-        description: 'We don\'t actually have an intern. We\'ll need to hire one first, then blame them. This is a multi-sprint initiative.',
+        description:
+          "We don't actually have an intern. We'll need to hire one first, then blame them. This is a multi-sprint initiative.",
         status: TaskStatus.IN_PROGRESS,
         priority: TaskPriority.MEDIUM,
         creatorIndex: 0,
@@ -157,7 +173,8 @@ export class SeedService {
       },
       {
         title: 'Optimize the loading spinner to spin 23% faster',
-        description: "Users have been complaining that the spinner feels 'sluggish'. We've assembled a task force. This is our top priority now.",
+        description:
+          "Users have been complaining that the spinner feels 'sluggish'. We've assembled a task force. This is our top priority now.",
         status: TaskStatus.TODO,
         priority: TaskPriority.HIGH,
         creatorIndex: 3,
@@ -165,7 +182,8 @@ export class SeedService {
       },
       {
         title: 'Delete 47 lines of dead code that everyone is afraid to touch',
-        description: 'Carlos wrote it in 2024. He left the company. The code has no tests. It references a database table that no longer exists. We are all scared.',
+        description:
+          'Carlos wrote it in 2024. He left the company. The code has no tests. It references a database table that no longer exists. We are all scared.',
         status: TaskStatus.TODO,
         priority: TaskPriority.MEDIUM,
         creatorIndex: 1,
