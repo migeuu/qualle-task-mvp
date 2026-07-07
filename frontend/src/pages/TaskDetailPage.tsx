@@ -61,24 +61,28 @@ export function TaskDetailPage() {
 
   const handleUpdate = async () => {
     if (!id) return
+    const payload = {
+      taskId: id,
+      title: editTitle,
+      description: editDescription || undefined,
+      status: editStatus,
+      priority: editPriority,
+      dueDate: editDueDate || undefined,
+    }
+    console.log('[UpdateTask] sending:', payload)
     try {
-      const result = await updateMutation.mutateAsync({
-        taskId: id,
-        title: editTitle,
-        description: editDescription || undefined,
-        status: editStatus,
-        priority: editPriority,
-        dueDate: editDueDate || undefined,
-      })
-      // Update cache immediately for instant UI feedback
+      const result = await updateMutation.mutateAsync(payload)
+      console.log('[UpdateTask] received:', result)
       queryClient.setQueryData(['task', id], (old: typeof task) => old ? { ...old, ...result } : result)
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
       toast.success('Task updated')
       setEditing(false)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update task'
+      console.error('[UpdateTask] error:', err)
       toast.error(message)
     }
+  }
   }
 
   if (isLoading) return <Spinner />
