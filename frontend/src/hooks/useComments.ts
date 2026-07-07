@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Comment, CreateCommentInput } from '../types'
+import type { Task, CreateCommentInput } from '../types'
 import { gqlRequest } from '../lib/graphql'
 
 export function useAddComment() {
@@ -7,10 +7,11 @@ export function useAddComment() {
 
   return useMutation({
     mutationFn: (input: CreateCommentInput) =>
-      gqlRequest<{ addComment: Comment }>(
+      gqlRequest<{ addComment: Task }>(
         `mutation AddComment($input: CreateCommentInput!) {
           addComment(input: $input) {
-            id content author { id name email } createdAt
+            id
+            comments { id content author { id name email } createdAt }
           }
         }`,
         { input },
