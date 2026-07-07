@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, Subscription } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Subscription, ID } from '@nestjs/graphql';
 import { Inject } from '@nestjs/common';
 import { PubSub } from 'graphql-subscriptions';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator';
@@ -98,7 +98,7 @@ export class TaskResolver {
   }
 
   @Query(() => TaskTypeormEntity)
-  async task(@Args('taskId', { type: () => String }) taskId: string): Promise<TaskTypeormEntity> {
+  async task(@Args('taskId', { type: () => ID }) taskId: string): Promise<TaskTypeormEntity> {
     const found = await this.taskRepo.findById(taskId);
     return found as unknown as TaskTypeormEntity;
   }

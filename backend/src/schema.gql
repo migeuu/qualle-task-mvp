@@ -75,7 +75,7 @@ input PaginationInput {
 
 type Query {
   me: User!
-  task(taskId: String!): Task!
+  task(taskId: ID!): Task!
   tasks(filter: TaskFilterInput, pagination: PaginationInput): TaskPage!
   users(input: UsersFilterInput): [User!]!
 }
