@@ -9,9 +9,7 @@ export function useSocketEffect() {
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    if (!getToken()) {
-      return
-    }
+    if (!getToken()) return
 
     const socket = getSocket()
 
@@ -19,9 +17,16 @@ export function useSocketEffect() {
       toast(payload.message)
     }
 
-    function handleTaskUpdate() {
+    function handleTaskUpdate(data: { taskId: string; eventAuthorId: string; eventType: string }) {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
-      queryClient.invalidateQueries({ queryKey: ['task'] })
+      if (data?.taskId) {
+        queryClient.invalidateQueries({ queryKey: ['task', data.taskId] })
+      }
+      if (data?.eventType === 'TASK_NEW_COMMENT') {
+        toast('New comment on a task', { icon: '💬' })
+      } else {
+        toast('A task was updated', { icon: '🔄' })
+      }
     }
 
     socket.on('notification', handleNotification)

@@ -50,7 +50,10 @@ export function useGraphQLSubscription() {
     const taskUpdatedCleanup = client.subscribe<{ taskUpdated: TaskNotification }>(
       { query: TASK_UPDATED_SUB },
       {
-        next: ({ data }) => invalidateTask(queryClient, data.taskUpdated),
+        next: ({ data }) => {
+          invalidateTask(queryClient, data.taskUpdated)
+          toast('A task was updated', { icon: '🔄' })
+        },
         error: () => {},
         ...sinkComplete,
       },
@@ -61,7 +64,7 @@ export function useGraphQLSubscription() {
       {
         next: () => {
           queryClient.invalidateQueries({ queryKey: ['tasks'] })
-          toast('A task was assigned')
+          toast('You have been assigned to a task', { icon: '👤' })
         },
         error: () => {},
         ...sinkComplete,
@@ -71,7 +74,10 @@ export function useGraphQLSubscription() {
     const newCommentCleanup = client.subscribe<{ newComment: TaskNotification }>(
       { query: NEW_COMMENT_SUB },
       {
-        next: ({ data }) => invalidateTask(queryClient, data.newComment),
+        next: ({ data }) => {
+          invalidateTask(queryClient, data.newComment)
+          toast('New comment on a task', { icon: '💬' })
+        },
         error: () => {},
         ...sinkComplete,
       },
