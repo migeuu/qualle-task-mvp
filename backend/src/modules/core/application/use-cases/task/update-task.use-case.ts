@@ -27,7 +27,10 @@ export class UpdateTaskUseCase {
   }): Promise<TaskDto> {
     await this.authz.ensureTaskOwner(input.taskId, input.userId);
 
-    const task = await this.taskRepo.findById(input.taskId)!;
+    const task = await this.taskRepo.findById(input.taskId);
+    if (!task) {
+      throw new Error('Task not found after authorization check');
+    }
 
     const updated = new Task(
       task.id,
