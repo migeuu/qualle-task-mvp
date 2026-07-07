@@ -23,7 +23,10 @@ import { JwtAuthGuard } from './shared/guards/jwt-auth.guard';
       password: process.env.DB_PASSWORD!,
       database: process.env.DB_DATABASE!,
       entities: [__dirname + '/**/*.typeorm-entity{.ts,.js}'],
+      migrations: [__dirname + '/database/migrations/*{.ts,.js}'],
+      migrationsTableName: 'typeorm_migrations',
       synchronize: process.env.DB_SYNCHRONIZE === 'true',
+      migrationsRun: process.env.DB_SYNCHRONIZE !== 'true',
       logging: process.env.DB_LOGGING === 'true',
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({

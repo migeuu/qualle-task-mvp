@@ -149,6 +149,21 @@ npm run test:cov
 | **Unit total** | **72** | |
 | E2E REST | 10 | Input validation, error status codes |
 
+## Migrations
+
+```bash
+# Show pending migrations
+npm run migration:show
+
+# Run all pending migrations
+npm run migration:run
+
+# Revert last migration
+npm run migration:revert
+```
+
+> Development uses `synchronize: true` (auto-creates tables). In production, set `DB_SYNCHRONIZE=false` and run migrations explicitly.
+
 ## Project Structure
 
 ```
@@ -162,6 +177,8 @@ backend/
 │   │   ├── application/           # Use cases, DTOs, mappers, authorization service
 │   │   ├── infra/                 # TypeORM entities, repositories, external services
 │   │   └── presentation/          # Controllers (REST), resolvers (GraphQL), inputs/outputs
+│   ├── database/                   # DataSource config + migrations
+│   │   └── migrations/              # TypeORM migration files
 │   ├── gateway/                   # Socket.IO gateway with JWT auth
 │   └── seed/                      # Demo data seeder
 ├── test/                          # E2E tests (SQLite in-memory)
