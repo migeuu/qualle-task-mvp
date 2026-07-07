@@ -12,7 +12,6 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: true,
       transform: true,
       exceptionFactory: (errors: ValidationError[]) => {
         const messages = errors.map((err) =>
