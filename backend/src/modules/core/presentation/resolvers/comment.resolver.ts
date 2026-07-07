@@ -1,4 +1,5 @@
 import { Resolver, Mutation, Args } from '@nestjs/graphql';
+import { Inject } from '@nestjs/common';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator';
 import { AddTaskCommentUseCase } from '../../application/use-cases/task/add-task-comment.use-case';
 import { TaskTypeormRepository } from '../../infra/orm/repositories/task.typeorm-repository';
@@ -8,13 +9,13 @@ import { CreateCommentInput } from '../inputs/create-comment.input';
 @Resolver()
 export class CommentResolver {
   constructor(
-    private readonly addCommentUC: AddTaskCommentUseCase,
-    private readonly taskRepo: TaskTypeormRepository,
+    @Inject(AddTaskCommentUseCase) private readonly addCommentUC: AddTaskCommentUseCase,
+    @Inject(TaskTypeormRepository) private readonly taskRepo: TaskTypeormRepository,
   ) {}
 
   @Mutation(() => TaskTypeormEntity)
   async addComment(
-    @Args('input') input: CreateCommentInput,
+    @Args('input', { type: () => CreateCommentInput }) input: CreateCommentInput,
     @CurrentUser() user: any,
   ): Promise<TaskTypeormEntity> {
     const dto = await this.addCommentUC.execute({

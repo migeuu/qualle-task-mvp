@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { InjectEntityManager } from '@nestjs/typeorm';
-import { EntityManager } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { v4 as uuid } from 'uuid';
 import {
   ITaskRepository,
@@ -13,10 +12,11 @@ import { TaskTypeormEntity } from '../entities/task.typeorm-entity';
 
 @Injectable()
 export class TaskTypeormRepository implements ITaskRepository {
-  constructor(
-    @InjectEntityManager()
-    private readonly em: EntityManager,
-  ) {}
+  constructor(private readonly dataSource: DataSource) {}
+
+  private get em() {
+    return this.dataSource.manager;
+  }
 
   async findById(id: string): Promise<Task | null> {
     const orm = await this.em.findOne(TaskTypeormEntity, {

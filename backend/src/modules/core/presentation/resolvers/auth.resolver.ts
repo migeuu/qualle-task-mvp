@@ -1,4 +1,5 @@
 import { Resolver, Mutation, Query, Args } from '@nestjs/graphql';
+import { Inject } from '@nestjs/common';
 import { Public } from '../../../../shared/decorators/public.decorator';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator';
 import { UserSignupUseCase } from '../../application/use-cases/auth/user-signup.use-case';
@@ -15,23 +16,23 @@ import { AuthPayload } from '../outputs/auth-payload.type';
 @Resolver()
 export class AuthResolver {
   constructor(
-    private readonly signupUC: UserSignupUseCase,
-    private readonly loginUC: UserLoginUseCase,
-    private readonly findUserDetailsUC: FindUserDetailsUseCase,
-    private readonly findUsersPaginatedUC: FindUsersPaginatedUseCase,
-    private readonly userRepo: UserTypeormRepository,
+    @Inject(UserSignupUseCase) private readonly signupUC: UserSignupUseCase,
+    @Inject(UserLoginUseCase) private readonly loginUC: UserLoginUseCase,
+    @Inject(FindUserDetailsUseCase) private readonly findUserDetailsUC: FindUserDetailsUseCase,
+    @Inject(FindUsersPaginatedUseCase) private readonly findUsersPaginatedUC: FindUsersPaginatedUseCase,
+    @Inject(UserTypeormRepository) private readonly userRepo: UserTypeormRepository,
   ) {}
 
   @Public()
   @Mutation(() => Boolean)
-  async register(@Args('input') input: RegisterInput): Promise<boolean> {
+  async register(@Args('input', { type: () => RegisterInput }) input: RegisterInput): Promise<boolean> {
     await this.signupUC.execute(input);
     return true;
   }
 
   @Public()
   @Mutation(() => AuthPayload)
-  async login(@Args('input') input: LoginInput): Promise<AuthPayload> {
+  async login(@Args('input', { type: () => LoginInput }) input: LoginInput): Promise<AuthPayload> {
     return this.loginUC.execute(input);
   }
 

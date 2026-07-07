@@ -23,20 +23,20 @@ import { TaskEventVO } from '../../domain/value-objects/task-event.vo';
 @Resolver()
 export class TaskResolver {
   constructor(
-    private readonly createTaskUC: CreateTaskUseCase,
-    private readonly updateTaskUC: UpdateTaskUseCase,
-    private readonly deleteTaskUC: DeleteTaskUseCase,
-    private readonly findTaskDetailsUC: FindTaskDetailsUseCase,
-    private readonly findTasksPaginatedUC: FindTasksPaginatedUseCase,
-    private readonly assignTaskUC: AssignTaskUseCase,
-    private readonly taskRepo: TaskTypeormRepository,
+    @Inject(CreateTaskUseCase) private readonly createTaskUC: CreateTaskUseCase,
+    @Inject(UpdateTaskUseCase) private readonly updateTaskUC: UpdateTaskUseCase,
+    @Inject(DeleteTaskUseCase) private readonly deleteTaskUC: DeleteTaskUseCase,
+    @Inject(FindTaskDetailsUseCase) private readonly findTaskDetailsUC: FindTaskDetailsUseCase,
+    @Inject(FindTasksPaginatedUseCase) private readonly findTasksPaginatedUC: FindTasksPaginatedUseCase,
+    @Inject(AssignTaskUseCase) private readonly assignTaskUC: AssignTaskUseCase,
+    @Inject(TaskTypeormRepository) private readonly taskRepo: TaskTypeormRepository,
     @Inject('PUB_SUB') private readonly pubSub: PubSub,
   ) {}
 
   @Query(() => TaskPage)
   async tasks(
-    @Args('pagination', { nullable: true }) pagination?: PaginationInput,
-    @Args('filter', { nullable: true }) filter?: TaskFilterInput,
+    @Args('pagination', { nullable: true, type: () => PaginationInput }) pagination?: PaginationInput,
+    @Args('filter', { nullable: true, type: () => TaskFilterInput }) filter?: TaskFilterInput,
   ): Promise<TaskPage> {
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
@@ -98,14 +98,14 @@ export class TaskResolver {
   }
 
   @Query(() => TaskTypeormEntity)
-  async task(@Args('taskId') taskId: string): Promise<TaskTypeormEntity> {
+  async task(@Args('taskId', { type: () => String }) taskId: string): Promise<TaskTypeormEntity> {
     const found = await this.taskRepo.findById(taskId);
     return found as unknown as TaskTypeormEntity;
   }
 
   @Mutation(() => TaskTypeormEntity)
   async createTask(
-    @Args('input') input: CreateTaskInput,
+    @Args('input', { type: () => CreateTaskInput }) input: CreateTaskInput,
     @CurrentUser() user: any,
   ): Promise<TaskTypeormEntity> {
     const dto = await this.createTaskUC.execute({
@@ -122,7 +122,7 @@ export class TaskResolver {
 
   @Mutation(() => TaskTypeormEntity)
   async updateTask(
-    @Args('input') input: UpdateTaskInput,
+    @Args('input', { type: () => UpdateTaskInput }) input: UpdateTaskInput,
     @CurrentUser() user: any,
   ): Promise<TaskTypeormEntity> {
     const dto = await this.updateTaskUC.execute({
@@ -140,7 +140,7 @@ export class TaskResolver {
 
   @Mutation(() => Boolean)
   async deleteTask(
-    @Args('input') input: DeleteTaskInput,
+    @Args('input', { type: () => DeleteTaskInput }) input: DeleteTaskInput,
     @CurrentUser() user: any,
   ): Promise<boolean> {
     await this.deleteTaskUC.execute({ taskId: input.taskId, userId: user.sub });
@@ -149,7 +149,7 @@ export class TaskResolver {
 
   @Mutation(() => TaskTypeormEntity)
   async assignTask(
-    @Args('input') input: AssignTaskInput,
+    @Args('input', { type: () => AssignTaskInput }) input: AssignTaskInput,
     @CurrentUser() user: any,
   ): Promise<TaskTypeormEntity> {
     const dto = await this.assignTaskUC.execute({

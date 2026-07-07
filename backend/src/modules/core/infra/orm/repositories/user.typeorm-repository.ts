@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { InjectEntityManager } from '@nestjs/typeorm';
-import { EntityManager } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { v4 as uuid } from 'uuid';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { User } from '../../../domain/entities/user.entity';
@@ -8,10 +7,11 @@ import { UserTypeormEntity } from '../entities/user.typeorm-entity';
 
 @Injectable()
 export class UserTypeormRepository implements IUserRepository {
-  constructor(
-    @InjectEntityManager()
-    private readonly em: EntityManager,
-  ) {}
+  constructor(private readonly dataSource: DataSource) {}
+
+  private get em() {
+    return this.dataSource.manager;
+  }
 
   async findByEmail(email: string): Promise<User | null> {
     const orm = await this.em.findOne(UserTypeormEntity, { where: { email } });
