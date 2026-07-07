@@ -25,7 +25,7 @@ export function TaskDetailPage() {
   const handleAssign = async () => {
     if (!assignUserId.trim() || !id) return
     try {
-      await assignMutation.mutateAsync({ taskId: id, userId: assignUserId.trim() })
+      await assignMutation.mutateAsync({ taskId: id, assigneeIds: [assignUserId.trim()] })
       toast.success('User assigned')
       setAssignUserId('')
     } catch (err) {

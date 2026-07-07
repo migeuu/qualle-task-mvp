@@ -52,8 +52,10 @@ export interface AuthPayload {
 }
 
 export interface TaskPage {
-  items: Task[];
+  data: Task[];
   total: number;
+  page: number;
+  limit: number;
 }
 
 export interface RegisterInput {
@@ -76,7 +78,7 @@ export interface CreateTaskInput {
 }
 
 export interface UpdateTaskInput {
-  id: string;
+  taskId: string;
   title?: string;
   description?: string;
   status?: TaskStatus;
@@ -97,7 +99,7 @@ export interface PaginationInput {
 
 export interface AssignTaskInput {
   taskId: string;
-  userId: string;
+  assigneeIds: string[];
 }
 
 export interface CreateCommentInput {

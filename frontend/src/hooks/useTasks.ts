@@ -29,8 +29,10 @@ export function useTasksQuery(
       gqlRequest<{ tasks: TaskPage }>(
         `query Tasks($filter: TaskFilterInput, $pagination: PaginationInput) {
           tasks(filter: $filter, pagination: $pagination) {
-            items { ${TASK_FIELDS} }
+            data { ${TASK_FIELDS} }
             total
+            page
+            limit
           }
         }`,
         { filter, pagination },
@@ -45,8 +47,8 @@ export function useTaskQuery(id: string) {
     queryKey: ['task', id],
     queryFn: () =>
       gqlRequest<{ task: Task }>(
-        `query Task($id: ID!) {
-          task(id: $id) {
+        `query Task($taskId: ID!) {
+          task(taskId: $taskId) {
             id title description status priority dueDate
             creator { id name email }
             assignees { id name email }
@@ -54,7 +56,7 @@ export function useTaskQuery(id: string) {
             createdAt updatedAt
           }
         }`,
-        { id },
+        { taskId: id },
       ).then((r) => r.task),
     staleTime: 30_000,
     enabled: !!id,
@@ -66,9 +68,7 @@ export function useCreateTask() {
 
   return useMutation({
     mutationFn: (input: CreateTaskInput) =>
-      gqlRequest<{
-        createTask: Task
-      }>(
+      gqlRequest<{ createTask: Task }>(
         `mutation CreateTask($input: CreateTaskInput!) {
           createTask(input: $input) {
             id title description status priority dueDate createdAt
@@ -87,9 +87,7 @@ export function useUpdateTask() {
 
   return useMutation({
     mutationFn: (input: UpdateTaskInput) =>
-      gqlRequest<{
-        updateTask: Task
-      }>(
+      gqlRequest<{ updateTask: Task }>(
         `mutation UpdateTask($input: UpdateTaskInput!) {
           updateTask(input: $input) {
             id title description status priority dueDate
@@ -99,7 +97,7 @@ export function useUpdateTask() {
       ).then((r) => r.updateTask),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
-      queryClient.invalidateQueries({ queryKey: ['task', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['task', variables.taskId] })
     },
   })
 }
@@ -110,10 +108,10 @@ export function useDeleteTask() {
   return useMutation({
     mutationFn: (id: string) =>
       gqlRequest<{ deleteTask: boolean }>(
-        `mutation DeleteTask($id: ID!) {
-          deleteTask(id: $id)
+        `mutation DeleteTask($taskId: ID!) {
+          deleteTask(input: { taskId: $taskId })
         }`,
-        { id },
+        { taskId: id },
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })

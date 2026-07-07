@@ -15,7 +15,7 @@ export function DashboardPage() {
 
   const { data, isLoading, error } = useTasksQuery(filter, pagination)
 
-  const tasks = data?.items ?? []
+  const tasks = data?.data ?? []
   const total = data?.total ?? 0
 
   const handleFilterChange = (newFilter: TaskFilterInput) => {

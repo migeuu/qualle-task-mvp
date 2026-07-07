@@ -10,6 +10,15 @@ input AssignTaskInput {
 type AuthPayload {
   accessToken: String!
   refreshToken: String!
+  user: AuthUser!
+}
+
+type AuthUser {
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  name: String!
+  updatedAt: DateTime!
 }
 
 type Comment {
@@ -55,7 +64,7 @@ type Mutation {
   deleteTask(input: DeleteTaskInput!): Boolean!
   fillSeed: SeedResult!
   login(input: LoginInput!): AuthPayload!
-  register(input: RegisterInput!): Boolean!
+  register(input: RegisterInput!): AuthPayload!
   updateTask(input: UpdateTaskInput!): Task!
 }
 
