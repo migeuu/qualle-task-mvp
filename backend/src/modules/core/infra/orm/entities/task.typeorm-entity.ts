@@ -46,7 +46,7 @@ export class TaskTypeormEntity {
 
   @Field({ nullable: true })
   @ApiProperty({ required: false })
-  @Column({ nullable: true, type: 'datetime' })
+  @Column({ nullable: true, type: 'timestamp' })
   dueDate: Date | null;
 
   @Column({ type: 'uuid' })
