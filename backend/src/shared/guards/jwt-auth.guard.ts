@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
@@ -26,7 +26,7 @@ export class JwtAuthGuard implements CanActivate {
         request.headers?.authorization || request.headers?.Authorization;
 
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return false;
+        throw new UnauthorizedException('Missing or invalid authorization header');
       }
 
       try {
@@ -35,7 +35,7 @@ export class JwtAuthGuard implements CanActivate {
         request.user = payload;
         return true;
       } catch {
-        return false;
+        throw new UnauthorizedException('Invalid or expired token');
       }
     }
 
@@ -48,7 +48,7 @@ export class JwtAuthGuard implements CanActivate {
       gqlContext.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return false;
+      throw new UnauthorizedException('Missing or invalid authorization header');
     }
 
     try {
@@ -59,7 +59,7 @@ export class JwtAuthGuard implements CanActivate {
       }
       return true;
     } catch {
-      return false;
+      throw new UnauthorizedException('Invalid or expired token');
     }
   }
 }

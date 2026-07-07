@@ -1,7 +1,7 @@
 import { JwtAuthGuard } from '../jwt-auth.guard';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
-import { ExecutionContext } from '@nestjs/common';
+import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { IS_PUBLIC_KEY } from '../../decorators/public.decorator';
 
@@ -68,30 +68,30 @@ describe('JwtAuthGuard', () => {
       expect(mockGqlContext.req).toHaveProperty('user', { sub: 'user-1' });
     });
 
-    it('should return false if no auth header', async () => {
+    it('should throw UnauthorizedException if no auth header', async () => {
       mockGqlContext.req = { headers: {} };
 
-      const result = await guard.canActivate(mockContext as ExecutionContext);
-
-      expect(result).toBe(false);
+      await expect(
+        guard.canActivate(mockContext as ExecutionContext),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should return false if auth header is not Bearer', async () => {
+    it('should throw UnauthorizedException if auth header is not Bearer', async () => {
       mockGqlContext.req = { headers: { authorization: 'Basic xxx' } };
 
-      const result = await guard.canActivate(mockContext as ExecutionContext);
-
-      expect(result).toBe(false);
+      await expect(
+        guard.canActivate(mockContext as ExecutionContext),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should return false on invalid token', async () => {
+    it('should throw UnauthorizedException on invalid token', async () => {
       vi.spyOn(jwtService, 'verify').mockImplementation(() => {
         throw new Error('Invalid');
       });
 
-      const result = await guard.canActivate(mockContext as ExecutionContext);
-
-      expect(result).toBe(false);
+      await expect(
+        guard.canActivate(mockContext as ExecutionContext),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should support authorization from gqlContext.authorization (WebSocket)', async () => {
