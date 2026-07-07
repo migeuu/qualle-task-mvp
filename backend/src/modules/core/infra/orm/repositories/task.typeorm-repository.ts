@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 import {
   ITaskRepository,
   TaskFilterParams,
@@ -103,7 +103,7 @@ export class TaskTypeormRepository implements ITaskRepository {
 
   async create(task: Task): Promise<Task> {
     const orm = this.em.create(TaskTypeormEntity, {
-      id: task.id || uuid(),
+      id: task.id || randomUUID(),
       title: task.title,
       description: task.description,
       status: task.status,

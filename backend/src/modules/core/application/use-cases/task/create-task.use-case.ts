@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 import { ITaskRepository } from '../../../domain/repositories/task.repository';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { ITaskEventBus } from '../../services/task-event-bus.service';
@@ -32,7 +32,7 @@ export class CreateTaskUseCase {
     }
 
     const task = new Task(
-      uuid(),
+      randomUUID(),
       input.title,
       input.description ?? null,
       input.status ?? TaskStatus.TODO,

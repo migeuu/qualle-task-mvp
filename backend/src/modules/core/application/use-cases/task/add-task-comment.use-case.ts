@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 import { ITaskRepository } from '../../../domain/repositories/task.repository';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { ICommentRepository } from '../../../domain/repositories/comment.repository';
@@ -40,7 +40,7 @@ export class AddTaskCommentUseCase {
     }
 
     const comment = new Comment(
-      uuid(),
+      randomUUID(),
       input.content,
       input.taskId,
       input.userId,

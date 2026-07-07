@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 import { QueryFailedError } from 'typeorm';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { IHashService } from '../../services/hash.service';
@@ -28,7 +28,7 @@ export class UserSignupUseCase {
     const hashedPassword = await this.hashService.hash(input.password);
 
     const user = new User(
-      uuid(),
+      randomUUID(),
       input.email,
       hashedPassword,
       input.name,

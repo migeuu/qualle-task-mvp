@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 import { ICommentRepository } from '../../../domain/repositories/comment.repository';
 import { Comment } from '../../../domain/entities/comment.entity';
 import { CommentTypeormEntity } from '../entities/comment.typeorm-entity';
@@ -32,7 +32,7 @@ export class CommentTypeormRepository implements ICommentRepository {
 
   async create(comment: Comment): Promise<Comment> {
     const orm = this.em.create(CommentTypeormEntity, {
-      id: comment.id || uuid(),
+      id: comment.id || randomUUID(),
       content: comment.content,
       taskId: comment.taskId,
       authorId: comment.authorId,

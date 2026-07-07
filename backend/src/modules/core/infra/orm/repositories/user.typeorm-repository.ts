@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { User } from '../../../domain/entities/user.entity';
 import { UserTypeormEntity } from '../entities/user.typeorm-entity';
@@ -56,7 +56,7 @@ export class UserTypeormRepository implements IUserRepository {
 
   async create(user: User): Promise<User> {
     const orm = this.em.create(UserTypeormEntity, {
-      id: user.id || uuid(),
+      id: user.id || randomUUID(),
       email: user.email,
       password: user.password,
       name: user.name,
