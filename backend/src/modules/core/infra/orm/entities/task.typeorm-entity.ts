@@ -46,7 +46,10 @@ export class TaskTypeormEntity {
 
   @Field(() => Date, { nullable: true })
   @ApiProperty({ required: false })
-  @Column({ nullable: true, type: 'timestamp' })
+  @Column({ nullable: true, type: 'text', transformer: {
+    to: (value: Date | null) => value?.toISOString() ?? null,
+    from: (value: string | null) => value ? new Date(value) : null,
+  } })
   dueDate: Date | null;
 
   @Column({ type: 'uuid' })
