@@ -4,71 +4,27 @@ import toast from 'react-hot-toast'
 import { getSubscriptionClient, reconnectSubscriptionClient, disconnectSubscriptionClient } from '../lib/graphql-ws-client'
 import { getToken } from '../lib/auth'
 
-interface TaskUpdatedData {
-  taskUpdated: {
-    taskUpdated: {
-      id: string
-      title: string
-      status: string
-      priority: string
-    }
-  }
-}
-
-interface TaskAssignedData {
-  taskAssigned: {
-    taskAssigned: {
-      id: string
-      title: string
-    }
-  }
-}
-
-interface NewCommentData {
-  newComment: {
-    newComment: {
-      id: string
-      content: string
-      task: { id: string }
-    }
-  }
+interface TaskNotification {
+  taskId: string
+  eventAuthorId: string
+  eventType: string
 }
 
 const TASK_UPDATED_SUB = /* GraphQL */ `
   subscription TaskUpdated {
-    taskUpdated {
-      taskUpdated {
-        id
-        title
-        status
-        priority
-      }
-    }
+    taskUpdated { taskId eventAuthorId eventType }
   }
 `
 
 const TASK_ASSIGNED_SUB = /* GraphQL */ `
   subscription TaskAssigned {
-    taskAssigned {
-      taskAssigned {
-        id
-        title
-      }
-    }
+    taskAssigned { taskId eventAuthorId eventType }
   }
 `
 
 const NEW_COMMENT_SUB = /* GraphQL */ `
   subscription NewComment {
-    newComment {
-      newComment {
-        id
-        content
-        task {
-          id
-        }
-      }
-    }
+    newComment { taskId eventAuthorId eventType }
   }
 `
 
@@ -79,57 +35,49 @@ export function useGraphQLSubscription() {
 
   useEffect(() => {
     const token = getToken()
-    if (!token) {
-      return
-    }
+    if (!token) return
 
     reconnectSubscriptionClient()
     const client = getSubscriptionClient()
 
-    const taskUpdatedCleanup = client.subscribe<TaskUpdatedData>(
+    const onTaskEvent = (data: TaskNotification) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      if (data?.taskId) {
+        queryClient.invalidateQueries({ queryKey: ['task', data.taskId] })
+      }
+    }
+
+    const taskUpdatedCleanup = client.subscribe<{ taskUpdated: TaskNotification }>(
       { query: TASK_UPDATED_SUB },
       {
-        next: () => {
-          queryClient.invalidateQueries({ queryKey: ['tasks'] })
-          queryClient.invalidateQueries({ queryKey: ['task'] })
-        },
-        error: (err: unknown) => {
-          console.error('taskUpdated subscription error:', err)
-        },
+        next: ({ data }) => onTaskEvent(data.taskUpdated),
+        error: (err: unknown) => console.error('taskUpdated sub error:', err),
         ...sinkComplete,
       },
     )
 
-    const taskAssignedCleanup = client.subscribe<TaskAssignedData>(
+    const taskAssignedCleanup = client.subscribe<{ taskAssigned: TaskNotification }>(
       { query: TASK_ASSIGNED_SUB },
       {
-        next: (data) => {
-          queryClient.invalidateQueries({ queryKey: ['tasks'] })
-          const title = data.data?.taskAssigned?.taskAssigned?.title
-          if (title) {
-            toast(`You have been assigned to "${title}"`)
-          }
+        next: ({ data }) => {
+          onTaskEvent(data.taskAssigned)
+          toast('A task was assigned')
         },
-        error: (err: unknown) => {
-          console.error('taskAssigned subscription error:', err)
-        },
+        error: (err: unknown) => console.error('taskAssigned sub error:', err),
         ...sinkComplete,
       },
     )
 
-    const newCommentCleanup = client.subscribe<NewCommentData>(
+    const newCommentCleanup = client.subscribe<{ newComment: TaskNotification }>(
       { query: NEW_COMMENT_SUB },
       {
-        next: (data) => {
-          const taskId = data.data?.newComment?.newComment?.task?.id
-          if (taskId) {
-            queryClient.invalidateQueries({ queryKey: ['task', taskId] })
+        next: ({ data }) => {
+          if (data.newComment?.taskId) {
+            queryClient.invalidateQueries({ queryKey: ['task', data.newComment.taskId] })
           }
           queryClient.invalidateQueries({ queryKey: ['tasks'] })
         },
-        error: (err: unknown) => {
-          console.error('newComment subscription error:', err)
-        },
+        error: (err: unknown) => console.error('newComment sub error:', err),
         ...sinkComplete,
       },
     )

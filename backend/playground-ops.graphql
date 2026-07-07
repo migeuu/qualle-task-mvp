@@ -174,32 +174,25 @@ mutation AddComment {
 
 subscription TaskUpdated {
   taskUpdated {
-    taskUpdated {
-      id
-      title
-      status
-      priority
-    }
+    taskId
+    eventAuthorId
+    eventType
   }
 }
 
 subscription TaskAssigned {
   taskAssigned {
-    taskAssigned {
-      id
-      title
-      assignees { id name }
-    }
+    taskId
+    eventAuthorId
+    eventType
   }
 }
 
 subscription NewComment {
   newComment {
-    newComment {
-      id
-      content
-      author { name }
-    }
+    taskId
+    eventAuthorId
+    eventType
   }
 }
 

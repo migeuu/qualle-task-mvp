@@ -118,9 +118,9 @@ mutation { assignTask(input: { taskId: "uuid", assigneeIds: ["user-uuid"] }) { i
 mutation { addComment(input: { taskId: "uuid", content: "Looks good!" }) { id content author { name } } }
 
 # Real-time
-subscription { taskUpdated { taskUpdated { id title status } } }
-subscription { taskAssigned { taskAssigned { id title assignees { name } } } }
-subscription { newComment { newComment { id content author { name } } } }
+subscription { taskUpdated { taskId eventAuthorId eventType } }
+subscription { taskAssigned { taskId eventAuthorId eventType } }
+subscription { newComment { taskId eventAuthorId eventType } }
 ```
 
 ## Testing
