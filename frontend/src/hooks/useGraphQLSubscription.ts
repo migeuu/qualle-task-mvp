@@ -30,6 +30,13 @@ const NEW_COMMENT_SUB = /* GraphQL */ `
 
 const sinkComplete = { complete: () => {} }
 
+const invalidateTask = (queryClient: ReturnType<typeof useQueryClient>, notification: TaskNotification) => {
+  queryClient.invalidateQueries({ queryKey: ['tasks'] })
+  if (notification?.taskId) {
+    queryClient.invalidateQueries({ queryKey: ['task', notification.taskId] })
+  }
+}
+
 export function useGraphQLSubscription() {
   const queryClient = useQueryClient()
 
@@ -40,18 +47,11 @@ export function useGraphQLSubscription() {
     reconnectSubscriptionClient()
     const client = getSubscriptionClient()
 
-    const onTaskEvent = (data: TaskNotification) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] })
-      if (data?.taskId) {
-        queryClient.invalidateQueries({ queryKey: ['task', data.taskId] })
-      }
-    }
-
     const taskUpdatedCleanup = client.subscribe<{ taskUpdated: TaskNotification }>(
       { query: TASK_UPDATED_SUB },
       {
-        next: ({ data }) => onTaskEvent(data.taskUpdated),
-        error: (err: unknown) => console.error('taskUpdated sub error:', err),
+        next: ({ data }) => invalidateTask(queryClient, data.taskUpdated),
+        error: () => {},
         ...sinkComplete,
       },
     )
@@ -59,11 +59,11 @@ export function useGraphQLSubscription() {
     const taskAssignedCleanup = client.subscribe<{ taskAssigned: TaskNotification }>(
       { query: TASK_ASSIGNED_SUB },
       {
-        next: ({ data }) => {
-          onTaskEvent(data.taskAssigned)
+        next: () => {
+          queryClient.invalidateQueries({ queryKey: ['tasks'] })
           toast('A task was assigned')
         },
-        error: (err: unknown) => console.error('taskAssigned sub error:', err),
+        error: () => {},
         ...sinkComplete,
       },
     )
@@ -71,13 +71,8 @@ export function useGraphQLSubscription() {
     const newCommentCleanup = client.subscribe<{ newComment: TaskNotification }>(
       { query: NEW_COMMENT_SUB },
       {
-        next: ({ data }) => {
-          if (data.newComment?.taskId) {
-            queryClient.invalidateQueries({ queryKey: ['task', data.newComment.taskId] })
-          }
-          queryClient.invalidateQueries({ queryKey: ['tasks'] })
-        },
-        error: (err: unknown) => console.error('newComment sub error:', err),
+        next: ({ data }) => invalidateTask(queryClient, data.newComment),
+        error: () => {},
         ...sinkComplete,
       },
     )
