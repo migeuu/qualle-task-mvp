@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -22,25 +22,15 @@ export function TaskDetailPage() {
   const queryClient = useQueryClient()
   const [assignUserId, setAssignUserId] = useState('')
   const [editing, setEditing] = useState(false)
-  const [editTitle, setEditTitle] = useState('')
-  const [editDescription, setEditDescription] = useState('')
-  const [editStatus, setEditStatus] = useState<TaskStatus>('TODO')
-  const [editPriority, setEditPriority] = useState<TaskPriority>('MEDIUM')
-  const [editDueDate, setEditDueDate] = useState('')
+  const titleRef = useRef<HTMLInputElement>(null)
+  const descRef = useRef<HTMLTextAreaElement>(null)
+  const statusRef = useRef<HTMLSelectElement>(null)
+  const priorityRef = useRef<HTMLSelectElement>(null)
+  const dueDateRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setAssignUserId('')
   }, [id])
-
-  useEffect(() => {
-    if (task) {
-      setEditTitle(task.title)
-      setEditDescription(task.description ?? '')
-      setEditStatus(task.status)
-      setEditPriority(task.priority)
-      setEditDueDate(task.dueDate ? task.dueDate.slice(0, 10) : '')
-    }
-  }, [task])
 
   const assignedIds = new Set(task?.assignees?.map((a) => a.id) ?? [])
   const isAlreadyAssigned = assignUserId ? assignedIds.has(assignUserId) : false
@@ -63,11 +53,11 @@ export function TaskDetailPage() {
     if (!id) return
     const payload = {
       taskId: id,
-      title: editTitle,
-      description: editDescription || undefined,
-      status: editStatus,
-      priority: editPriority,
-      dueDate: editDueDate || undefined,
+      title: titleRef.current?.value || '',
+      description: descRef.current?.value || undefined,
+      status: statusRef.current?.value as TaskStatus,
+      priority: priorityRef.current?.value as TaskPriority,
+      dueDate: dueDateRef.current?.value || undefined,
     }
     console.log('[UpdateTask] sending:', payload)
     try {
@@ -105,7 +95,7 @@ export function TaskDetailPage() {
       <article style={styles.article}>
         <header style={styles.articleHeader}>
           {editing ? (
-            <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
+            <input ref={titleRef} defaultValue={task.title}
               style={{ ...styles.editInput, fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem' }} />
           ) : (
             <h1 style={styles.taskTitle}>{task.title}</h1>
@@ -113,8 +103,8 @@ export function TaskDetailPage() {
 
           <div style={styles.badges}>
             {editing ? (
-              <select value={editStatus} onChange={(e) => setEditStatus(e.target.value as TaskStatus)}
-                style={{ ...styles.editSelect, background: STATUS_COLORS[editStatus] ?? '#9ca3af' }}>
+              <select ref={statusRef} defaultValue={task.status}
+                style={{ ...styles.editSelect, background: STATUS_COLORS[task.status] ?? '#9ca3af' }}>
                 {ALL_STATUSES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
               </select>
             ) : (
@@ -123,8 +113,8 @@ export function TaskDetailPage() {
               </span>
             )}
             {editing ? (
-              <select value={editPriority} onChange={(e) => setEditPriority(e.target.value as TaskPriority)}
-                style={{ ...styles.editSelect, background: PRIORITY_COLORS[editPriority] ?? '#9ca3af' }}>
+              <select ref={priorityRef} defaultValue={task.priority}
+                style={{ ...styles.editSelect, background: PRIORITY_COLORS[task.priority] ?? '#9ca3af' }}>
                 {ALL_PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
             ) : (
@@ -152,7 +142,7 @@ export function TaskDetailPage() {
         <section style={styles.section}>
           <h2 style={styles.sectionTitle}>Description</h2>
           {editing ? (
-            <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)}
+            <textarea ref={descRef} defaultValue={task.description ?? ''}
               style={{ ...styles.editInput, minHeight: 100, width: '100%', resize: 'vertical' }} />
           ) : (
             task.description ? <p style={styles.description}>{task.description}</p> : <p style={{ color: '#999', fontStyle: 'italic' }}>No description</p>
@@ -166,7 +156,7 @@ export function TaskDetailPage() {
               <dt style={styles.detailLabel}>Due Date</dt>
               <dd style={styles.detailValue}>
                 {editing ? (
-                  <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
+                  <input type="date" ref={dueDateRef} defaultValue={task.dueDate ? task.dueDate.slice(0, 10) : ''}
                     style={styles.editInput} />
                 ) : (
                   task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Not set'
