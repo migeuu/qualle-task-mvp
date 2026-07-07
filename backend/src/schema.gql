@@ -22,11 +22,11 @@ type AuthUser {
 }
 
 type Comment {
-  author: User!
+  author: User
   content: String!
   createdAt: DateTime!
   id: ID!
-  task: Task!
+  task: Task
   updatedAt: DateTime!
 }
 

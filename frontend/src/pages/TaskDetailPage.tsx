@@ -25,7 +25,9 @@ export function TaskDetailPage() {
   const handleAssign = async () => {
     if (!assignUserId.trim() || !id) return
     try {
-      await assignMutation.mutateAsync({ taskId: id, assigneeIds: [assignUserId.trim()] })
+      const currentIds = task?.assignees?.map((a) => a.id) ?? []
+      const newIds = [...new Set([...currentIds, assignUserId.trim()])]
+      await assignMutation.mutateAsync({ taskId: id, assigneeIds: newIds })
       toast.success('User assigned')
       setAssignUserId('')
     } catch (err) {
