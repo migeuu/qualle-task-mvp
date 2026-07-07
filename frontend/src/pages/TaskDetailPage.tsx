@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { useTaskQuery, useUsersQuery, useUpdateTask } from '../hooks/useTasks'
 import { useAssignTask } from '../hooks/useAssign'
@@ -18,6 +19,7 @@ export function TaskDetailPage() {
   const { data: users } = useUsersQuery()
   const assignMutation = useAssignTask()
   const updateMutation = useUpdateTask()
+  const queryClient = useQueryClient()
   const [assignUserId, setAssignUserId] = useState('')
   const [editing, setEditing] = useState(false)
   const [editTitle, setEditTitle] = useState('')
@@ -60,7 +62,7 @@ export function TaskDetailPage() {
   const handleUpdate = async () => {
     if (!id) return
     try {
-      await updateMutation.mutateAsync({
+      const result = await updateMutation.mutateAsync({
         taskId: id,
         title: editTitle,
         description: editDescription || undefined,
@@ -68,6 +70,9 @@ export function TaskDetailPage() {
         priority: editPriority,
         dueDate: editDueDate || undefined,
       })
+      // Update cache immediately for instant UI feedback
+      queryClient.setQueryData(['task', id], (old: typeof task) => old ? { ...old, ...result } : result)
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
       toast.success('Task updated')
       setEditing(false)
     } catch (err) {
