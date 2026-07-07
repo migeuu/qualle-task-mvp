@@ -1,6 +1,7 @@
 import { Resolver, Query, Mutation, Args, Subscription, ID } from '@nestjs/graphql';
 import { Inject } from '@nestjs/common';
 import { PubSub } from 'graphql-subscriptions';
+import { DataSource } from 'typeorm';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator';
 import { CreateTaskUseCase } from '../../application/use-cases/task/create-task.use-case';
 import { UpdateTaskUseCase } from '../../application/use-cases/task/update-task.use-case';
@@ -31,6 +32,7 @@ export class TaskResolver {
     @Inject(AssignTaskUseCase) private readonly assignTaskUC: AssignTaskUseCase,
     @Inject(TaskTypeormRepository) private readonly taskRepo: TaskTypeormRepository,
     @Inject('PUB_SUB') private readonly pubSub: PubSub,
+    @Inject(DataSource) private readonly dataSource: DataSource,
   ) {}
 
   @Query(() => TaskPage)
@@ -98,9 +100,8 @@ export class TaskResolver {
   }
 
   @Query(() => TaskTypeormEntity)
-  async task(@Args('taskId', { type: () => ID }) taskId: string): Promise<TaskTypeormEntity> {
-    const found = await this.taskRepo.findById(taskId);
-    return found as unknown as TaskTypeormEntity;
+  async task(@Args('taskId', { type: () => ID }) taskId: string): Promise<TaskTypeormEntity | null> {
+    return this.findOrm(taskId);
   }
 
   @Mutation(() => TaskTypeormEntity)
@@ -116,8 +117,7 @@ export class TaskResolver {
       priority: input.priority,
       dueDate: input.dueDate,
     });
-    const found = await this.taskRepo.findById(dto.id);
-    return found as unknown as TaskTypeormEntity;
+    return (await this.findOrm(dto.id))!;
   }
 
   @Mutation(() => TaskTypeormEntity)
@@ -134,8 +134,7 @@ export class TaskResolver {
       priority: input.priority,
       dueDate: input.dueDate,
     });
-    const found = await this.taskRepo.findById(dto.id);
-    return found as unknown as TaskTypeormEntity;
+    return (await this.findOrm(dto.id))!;
   }
 
   @Mutation(() => Boolean)
@@ -157,8 +156,7 @@ export class TaskResolver {
       loggedUserId: user.sub,
       assigneeIds: input.assigneeIds,
     });
-    const found = await this.taskRepo.findById(dto.id);
-    return found as unknown as TaskTypeormEntity;
+    return (await this.findOrm(dto.id))!;
   }
 
   @Subscription(() => TaskNotificationOutput, {
@@ -195,5 +193,12 @@ export class TaskResolver {
   })
   async taskNewComment(): Promise<AsyncIterator<TaskNotificationOutput>> {
     return (this.pubSub as any).asyncIterator('taskNewComment');
+  }
+
+  private async findOrm(taskId: string): Promise<TaskTypeormEntity | null> {
+    return this.dataSource.manager.findOne(TaskTypeormEntity, {
+      where: { id: taskId },
+      relations: ['creator', 'assignees', 'comments', 'comments.author'],
+    });
   }
 }

@@ -1,8 +1,8 @@
 import { Resolver, Mutation, Args } from '@nestjs/graphql';
 import { Inject } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator';
 import { AddTaskCommentUseCase } from '../../application/use-cases/task/add-task-comment.use-case';
-import { TaskTypeormRepository } from '../../infra/orm/repositories/task.typeorm-repository';
 import { TaskTypeormEntity } from '../../infra/orm/entities/task.typeorm-entity';
 import { CreateCommentInput } from '../inputs/create-comment.input';
 
@@ -10,7 +10,7 @@ import { CreateCommentInput } from '../inputs/create-comment.input';
 export class CommentResolver {
   constructor(
     @Inject(AddTaskCommentUseCase) private readonly addCommentUC: AddTaskCommentUseCase,
-    @Inject(TaskTypeormRepository) private readonly taskRepo: TaskTypeormRepository,
+    @Inject(DataSource) private readonly dataSource: DataSource,
   ) {}
 
   @Mutation(() => TaskTypeormEntity)
@@ -23,7 +23,9 @@ export class CommentResolver {
       userId: user.sub,
       content: input.content,
     });
-    const found = await this.taskRepo.findById(dto.id);
-    return found as unknown as TaskTypeormEntity;
+    return (await this.dataSource.manager.findOne(TaskTypeormEntity, {
+      where: { id: dto.id },
+      relations: ['creator', 'assignees', 'comments', 'comments.author'],
+    }))!;
   }
 }
