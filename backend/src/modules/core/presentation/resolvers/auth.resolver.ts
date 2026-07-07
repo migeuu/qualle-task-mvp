@@ -9,6 +9,7 @@ import { UserTypeormRepository } from '../../infra/orm/repositories/user.typeorm
 import { UserTypeormEntity } from '../../infra/orm/entities/user.typeorm-entity';
 import { RegisterInput } from '../inputs/register.input';
 import { LoginInput } from '../inputs/login.input';
+import { UsersFilterInput } from '../inputs/users-filter.input';
 import { AuthPayload } from '../outputs/auth-payload.type';
 
 @Resolver()
@@ -43,12 +44,8 @@ export class AuthResolver {
 
   @Query(() => [UserTypeormEntity])
   async users(
-    @Args('input', { nullable: true })
-    input?: {
-      page?: number;
-      limit?: number;
-      name?: string;
-    },
+    @Args('input', { nullable: true, type: () => UsersFilterInput })
+    input?: UsersFilterInput,
   ): Promise<UserTypeormEntity[]> {
     const page = input?.page ?? 1;
     const limit = input?.limit ?? 10;
