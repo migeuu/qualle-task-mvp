@@ -41,12 +41,19 @@ export function TaskForm({ initial, onClose, mode }: TaskFormProps) {
   })
 
   const onSubmit = async (data: TaskFormData) => {
+    const cleaned = {
+      ...data,
+      description: data.description || undefined,
+      status: data.status || undefined,
+      priority: data.priority || undefined,
+      dueDate: data.dueDate || undefined,
+    }
     try {
       if (mode === 'create') {
-        await createTask.mutateAsync(data as CreateTaskInput)
+        await createTask.mutateAsync(cleaned as CreateTaskInput)
         toast.success('Task created')
       } else {
-        await updateTask.mutateAsync({ id: initial!.id, ...data } as UpdateTaskInput & { id: string })
+        await updateTask.mutateAsync({ id: initial!.id, ...cleaned } as UpdateTaskInput & { id: string })
         toast.success('Task updated')
       }
       onClose()
