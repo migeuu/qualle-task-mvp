@@ -31,12 +31,12 @@ export class CommentTypeormEntity {
   @Column({ type: 'uuid' })
   authorId: string;
 
-  @Field(() => TaskTypeormEntity)
+  @Field(() => TaskTypeormEntity, { nullable: true })
   @ManyToOne(() => TaskTypeormEntity, (task) => task.comments)
   @JoinColumn({ name: 'taskId' })
   task: TaskTypeormEntity;
 
-  @Field(() => UserTypeormEntity)
+  @Field(() => UserTypeormEntity, { nullable: true })
   @ManyToOne(() => UserTypeormEntity)
   @JoinColumn({ name: 'authorId' })
   author: UserTypeormEntity;
