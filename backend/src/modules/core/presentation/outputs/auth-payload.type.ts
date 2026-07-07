@@ -1,4 +1,5 @@
 import { ObjectType, Field } from '@nestjs/graphql';
+import { UserTypeormEntity } from '../../infra/orm/entities/user.typeorm-entity';
 
 @ObjectType()
 export class AuthPayload {
@@ -7,4 +8,7 @@ export class AuthPayload {
 
   @Field()
   refreshToken: string;
+
+  @Field(() => UserTypeormEntity)
+  user: UserTypeormEntity;
 }

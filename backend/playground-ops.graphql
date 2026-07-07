@@ -27,12 +27,17 @@ mutation FillSeed {
 # ============================================================
 
 mutation Register {
-  register(input: { email: "teste@qualle.com", password: "123456", name: "Teste" })
+  register(input: { email: "teste@qualle.com", password: "123456", name: "Teste" }) {
+    accessToken
+    refreshToken
+    user { id email name }
+  }
 }
 
 mutation LoginAlice {
   login(input: { email: "alice@qualle.com", password: "123456" }) {
     accessToken
+    refreshToken
     user { id email name }
   }
 }
@@ -40,6 +45,7 @@ mutation LoginAlice {
 mutation LoginBruno {
   login(input: { email: "bruno@qualle.com", password: "123456" }) {
     accessToken
+    refreshToken
     user { id email name }
   }
 }

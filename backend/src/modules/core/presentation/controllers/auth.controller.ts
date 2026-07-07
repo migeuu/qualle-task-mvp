@@ -35,11 +35,11 @@ export class AuthController {
   @Public()
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User registered' })
+  @ApiResponse({ status: 201, description: 'User registered with token' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
-  async register(@Body() input: RegisterInput): Promise<{ success: boolean }> {
+  async register(@Body() input: RegisterInput): Promise<AuthPayload> {
     await this.signupUC.execute(input);
-    return { success: true };
+    return this.loginUC.execute({ email: input.email, password: input.password });
   }
 
   @Public()

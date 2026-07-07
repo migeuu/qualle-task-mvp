@@ -24,10 +24,10 @@ export class AuthResolver {
   ) {}
 
   @Public()
-  @Mutation(() => Boolean)
-  async register(@Args('input', { type: () => RegisterInput }) input: RegisterInput): Promise<boolean> {
+  @Mutation(() => AuthPayload)
+  async register(@Args('input', { type: () => RegisterInput }) input: RegisterInput): Promise<AuthPayload> {
     await this.signupUC.execute(input);
-    return true;
+    return this.loginUC.execute({ email: input.email, password: input.password });
   }
 
   @Public()

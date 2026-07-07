@@ -3,6 +3,8 @@ import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { IHashService } from '../../services/hash.service';
 import { IAuthService } from '../../services/auth.service';
 import { InvalidCredentialsException } from '../../../../../shared/exceptions/business.exceptions';
+import { UserDto } from '../../dtos/user.dto';
+import { UserMapper } from '../../mappers/user.mapper';
 
 @Injectable()
 export class UserLoginUseCase {
@@ -15,7 +17,7 @@ export class UserLoginUseCase {
   async execute(input: {
     email: string;
     password: string;
-  }): Promise<{ accessToken: string; refreshToken: string }> {
+  }): Promise<{ accessToken: string; refreshToken: string; user: UserDto }> {
     const user = await this.userRepo.findByEmailWithPassword(input.email);
     if (!user) {
       throw new InvalidCredentialsException();
@@ -33,6 +35,6 @@ export class UserLoginUseCase {
     const accessToken = this.authService.generateAccessToken(payload);
     const refreshToken = this.authService.generateRefreshToken(payload);
 
-    return { accessToken, refreshToken };
+    return { accessToken, refreshToken, user: UserMapper.toDto(user) };
   }
 }

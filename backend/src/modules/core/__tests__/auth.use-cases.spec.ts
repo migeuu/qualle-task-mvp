@@ -102,6 +102,11 @@ describe('UserLoginUseCase', () => {
     expect(result).toEqual({
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
+      user: expect.objectContaining({
+        id: 'user-1',
+        email: 'alice@test.com',
+        name: 'Alice',
+      }),
     });
     expect(mockHashService.compare).toHaveBeenCalledWith('secret123', 'hashed');
     expect(mockAuthService.generateAccessToken).toHaveBeenCalledWith({
