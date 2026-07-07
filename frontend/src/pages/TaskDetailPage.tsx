@@ -83,7 +83,6 @@ export function TaskDetailPage() {
       toast.error(message)
     }
   }
-  }
 
   if (isLoading) return <Spinner />
 
