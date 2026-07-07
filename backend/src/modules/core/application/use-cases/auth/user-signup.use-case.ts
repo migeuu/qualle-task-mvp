@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
 import { QueryFailedError } from 'typeorm';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
@@ -11,8 +11,8 @@ export class UserSignupUseCase {
   private readonly logger = new Logger(UserSignupUseCase.name);
 
   constructor(
-    private readonly userRepo: IUserRepository,
-    private readonly hashService: IHashService,
+    @Inject('IUserRepository') private readonly userRepo: IUserRepository,
+    @Inject('IHashService') private readonly hashService: IHashService,
   ) {}
 
   async execute(input: {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { ITaskRepository } from '../../domain/repositories/task.repository';
 import {
   TaskNotFoundException,
@@ -8,7 +8,7 @@ import {
 
 @Injectable()
 export class AuthorizationService {
-  constructor(private readonly taskRepo: ITaskRepository) {}
+  constructor(@Inject('ITaskRepository') private readonly taskRepo: ITaskRepository) {}
 
   async ensureTaskOwner(taskId: string, userId: string): Promise<void> {
     const task = await this.taskRepo.findById(taskId);

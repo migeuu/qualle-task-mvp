@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { UserDto } from '../../dtos/user.dto';
 import { PaginatedResult } from '../../dtos/paginated-result.dto';
@@ -6,7 +6,9 @@ import { UserMapper } from '../../mappers/user.mapper';
 
 @Injectable()
 export class FindUsersPaginatedUseCase {
-  constructor(private readonly userRepo: IUserRepository) {}
+  constructor(
+    @Inject('IUserRepository') private readonly userRepo: IUserRepository,
+  ) {}
 
   async execute(
     page: number,

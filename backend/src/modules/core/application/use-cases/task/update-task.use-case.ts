@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ITaskRepository } from '../../../domain/repositories/task.repository';
 import { ITaskEventBus } from '../../services/task-event-bus.service';
 import { AuthorizationService } from '../../services/authorization.service';
@@ -11,8 +11,8 @@ import { TaskEventVO } from '../../../domain/value-objects/task-event.vo';
 @Injectable()
 export class UpdateTaskUseCase {
   constructor(
-    private readonly taskRepo: ITaskRepository,
-    private readonly taskEventBus: ITaskEventBus,
+    @Inject('ITaskRepository') private readonly taskRepo: ITaskRepository,
+    @Inject('ITaskEventBus') private readonly taskEventBus: ITaskEventBus,
     private readonly authz: AuthorizationService,
   ) {}
 

@@ -1,11 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ITaskRepository } from '../../../domain/repositories/task.repository';
 import { AuthorizationService } from '../../services/authorization.service';
 
 @Injectable()
 export class DeleteTaskUseCase {
   constructor(
-    private readonly taskRepo: ITaskRepository,
+    @Inject('ITaskRepository') private readonly taskRepo: ITaskRepository,
     private readonly authz: AuthorizationService,
   ) {}
 

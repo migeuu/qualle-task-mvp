@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { IHashService } from '../../services/hash.service';
 import { IAuthService } from '../../services/auth.service';
@@ -7,9 +7,9 @@ import { InvalidCredentialsException } from '../../../../../shared/exceptions/bu
 @Injectable()
 export class UserLoginUseCase {
   constructor(
-    private readonly userRepo: IUserRepository,
-    private readonly hashService: IHashService,
-    private readonly authService: IAuthService,
+    @Inject('IUserRepository') private readonly userRepo: IUserRepository,
+    @Inject('IHashService') private readonly hashService: IHashService,
+    @Inject('IAuthService') private readonly authService: IAuthService,
   ) {}
 
   async execute(input: {

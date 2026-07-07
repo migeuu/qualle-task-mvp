@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
 import { ITaskRepository } from '../../../domain/repositories/task.repository';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
@@ -15,10 +15,10 @@ import { TaskEventVO } from '../../../domain/value-objects/task-event.vo';
 @Injectable()
 export class AddTaskCommentUseCase {
   constructor(
-    private readonly taskRepo: ITaskRepository,
-    private readonly userRepo: IUserRepository,
-    private readonly commentRepo: ICommentRepository,
-    private readonly taskEventBus: ITaskEventBus,
+    @Inject('ITaskRepository') private readonly taskRepo: ITaskRepository,
+    @Inject('IUserRepository') private readonly userRepo: IUserRepository,
+    @Inject('ICommentRepository') private readonly commentRepo: ICommentRepository,
+    @Inject('ITaskEventBus') private readonly taskEventBus: ITaskEventBus,
     private readonly authz: AuthorizationService,
   ) {}
 
