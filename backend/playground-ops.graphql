@@ -27,10 +27,7 @@ mutation FillSeed {
 # ============================================================
 
 mutation Register {
-  register(input: { email: "teste@qualle.com", password: "123456", name: "Teste" }) {
-    accessToken
-    user { id email name }
-  }
+  register(input: { email: "teste@qualle.com", password: "123456", name: "Teste" })
 }
 
 mutation LoginAlice {
@@ -55,14 +52,18 @@ query Me {
   me { id email name createdAt }
 }
 
+query ListUsers {
+  users { id name email }
+}
+
 # ============================================================
 #  TAREFAS - Queries (autenticado)
 # ============================================================
 
-# Listar todas as tarefas (com paginação)
+# Listar tarefas com paginação
 query ListTasks {
   tasks(pagination: { page: 1, limit: 20 }) {
-    items {
+    data {
       id
       title
       description
@@ -73,6 +74,8 @@ query ListTasks {
       assignees { id name }
     }
     total
+    page
+    limit
   }
 }
 
@@ -82,14 +85,14 @@ query ListTasksFiltered {
     filter: { status: TODO, priority: HIGH }
     pagination: { page: 1, limit: 10 }
   ) {
-    items { id title status priority }
+    data { id title status priority }
     total
   }
 }
 
-# Detalhes de uma tarefa (substitua o ID)
+# Detalhes de uma tarefa (substitua o UUID)
 query GetTask {
-  task(id: "uuid-da-tarefa") {
+  task(taskId: "uuid-da-tarefa") {
     id title description status priority dueDate
     creator { id name email }
     assignees { id name email }
@@ -115,7 +118,7 @@ mutation CreateTask {
 
 mutation UpdateTask {
   updateTask(input: {
-    id: "uuid-da-tarefa"
+    taskId: "uuid-da-tarefa"
     title: "Título atualizado"
     status: IN_PROGRESS
   }) {
@@ -124,13 +127,13 @@ mutation UpdateTask {
 }
 
 mutation DeleteTask {
-  deleteTask(id: "uuid-da-tarefa")
+  deleteTask(input: { taskId: "uuid-da-tarefa" })
 }
 
 mutation AssignTask {
   assignTask(input: {
     taskId: "uuid-da-tarefa"
-    userId: "uuid-do-usuario"
+    assigneeIds: ["uuid-do-usuario"]
   }) {
     id assignees { id name email }
   }
@@ -147,7 +150,6 @@ mutation AddComment {
   }) {
     id content
     author { name }
-    task { id title }
   }
 }
 
@@ -191,7 +193,6 @@ subscription NewComment {
       id
       content
       author { name }
-      task { id title }
     }
   }
 }
@@ -207,7 +208,7 @@ subscription NewComment {
 # 4. Execute ListTasks para ver as tarefas do seed
 # 5. Copie um ID de tarefa e teste UpdateTask / DeleteTask
 # 6. Execute CreateTask para criar uma nova
-# 7. Teste AssignTask com outro usuário (ex: LoginBruno pega o ID)
+# 7. Copie um ID de usuário do ListUsers e teste AssignTask
 # 8. Adicione comentários com AddComment
 # 9. Para real-time: abra outra aba, execute TaskUpdated,
 #    volte na aba principal e rode UpdateTask
