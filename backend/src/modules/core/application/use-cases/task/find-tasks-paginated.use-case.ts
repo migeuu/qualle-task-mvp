@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import {
   ITaskRepository,
   TaskFilterParams,
@@ -9,7 +9,9 @@ import { TaskMapper } from '../../mappers/task.mapper';
 
 @Injectable()
 export class FindTasksPaginatedUseCase {
-  constructor(private readonly taskRepo: ITaskRepository) {}
+  constructor(
+    @Inject('ITaskRepository') private readonly taskRepo: ITaskRepository,
+  ) {}
 
   async execute(
     page: number,
