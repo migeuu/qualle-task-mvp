@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -22,11 +22,7 @@ export function TaskDetailPage() {
   const queryClient = useQueryClient()
   const [assignUserId, setAssignUserId] = useState('')
   const [editing, setEditing] = useState(false)
-  const titleRef = useRef<HTMLInputElement>(null)
-  const descRef = useRef<HTMLTextAreaElement>(null)
-  const statusRef = useRef<HTMLSelectElement>(null)
-  const priorityRef = useRef<HTMLSelectElement>(null)
-  const dueDateRef = useRef<HTMLInputElement>(null)
+  const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
     setAssignUserId('')
@@ -44,35 +40,32 @@ export function TaskDetailPage() {
       toast.success('User assigned')
       setAssignUserId('')
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to assign user'
-      toast.error(message)
+      toast.error(err instanceof Error ? err.message : 'Failed to assign user')
     }
   }
 
-  const handleUpdate = async () => {
-    if (!id) return
+  const handleUpdate = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!id || !formRef.current) return
+    const fd = new FormData(formRef.current)
     const payload = {
       taskId: id,
-      title: titleRef.current?.value || '',
-      description: descRef.current?.value || undefined,
-      status: statusRef.current?.value as TaskStatus,
-      priority: priorityRef.current?.value as TaskPriority,
-      dueDate: dueDateRef.current?.value || undefined,
+      title: (fd.get('title') as string) || task!.title,
+      description: (fd.get('description') as string) || undefined,
+      status: (fd.get('status') as TaskStatus) || task!.status,
+      priority: (fd.get('priority') as TaskPriority) || task!.priority,
+      dueDate: (fd.get('dueDate') as string) || undefined,
     }
-    console.log('[UpdateTask] sending:', payload)
     try {
       const result = await updateMutation.mutateAsync(payload)
-      console.log('[UpdateTask] received:', result)
       queryClient.setQueryData(['task', id], (old: typeof task) => old ? { ...old, ...result } : result)
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
       toast.success('Task updated')
       setEditing(false)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to update task'
-      console.error('[UpdateTask] error:', err)
-      toast.error(message)
+      toast.error(err instanceof Error ? err.message : 'Failed to update task')
     }
-  }
+  }, [id, updateMutation, queryClient, task])
 
   if (isLoading) return <Spinner />
 
@@ -93,90 +86,107 @@ export function TaskDetailPage() {
       <button onClick={() => navigate('/dashboard')} style={styles.backLink}>← Back to Dashboard</button>
 
       <article style={styles.article}>
-        <header style={styles.articleHeader}>
-          {editing ? (
-            <input ref={titleRef} defaultValue={task.title}
-              style={{ ...styles.editInput, fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem' }} />
-          ) : (
-            <h1 style={styles.taskTitle}>{task.title}</h1>
-          )}
-
-          <div style={styles.badges}>
-            {editing ? (
-              <select ref={statusRef} defaultValue={task.status}
-                style={{ ...styles.editSelect, background: STATUS_COLORS[task.status] ?? '#9ca3af' }}>
-                {ALL_STATUSES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
-              </select>
-            ) : (
-              <span style={{ ...styles.badge, background: STATUS_COLORS[task.status] ?? '#9ca3af' }}>
-                {task.status?.replace('_', ' ') ?? 'Unknown'}
-              </span>
-            )}
-            {editing ? (
-              <select ref={priorityRef} defaultValue={task.priority}
-                style={{ ...styles.editSelect, background: PRIORITY_COLORS[task.priority] ?? '#9ca3af' }}>
-                {ALL_PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-            ) : (
-              <span style={{ ...styles.badge, background: PRIORITY_COLORS[task.priority] ?? '#9ca3af' }}>
-                {task.priority ?? 'No priority'}
-              </span>
-            )}
-          </div>
-
-          <div style={{ marginTop: '0.75rem' }}>
-            {editing ? (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={handleUpdate} disabled={updateMutation.isPending}
-                  style={{ ...styles.editBtn, background: '#22c55e' }}>
-                  {updateMutation.isPending ? 'Saving...' : 'Save'}
-                </button>
-                <button onClick={() => setEditing(false)} style={{ ...styles.editBtn, background: '#9ca3af' }}>Cancel</button>
+        {editing ? (
+          <form ref={formRef} onSubmit={handleUpdate}>
+            <header style={styles.articleHeader}>
+              <input name="title" defaultValue={task.title}
+                style={{ ...styles.editInput, fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem' }} />
+              <div style={styles.badges}>
+                <select name="status" defaultValue={task.status}
+                  style={{ ...styles.editSelect, background: STATUS_COLORS[task.status] ?? '#9ca3af' }}>
+                  {ALL_STATUSES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+                </select>
+                <select name="priority" defaultValue={task.priority}
+                  style={{ ...styles.editSelect, background: PRIORITY_COLORS[task.priority] ?? '#9ca3af' }}>
+                  {ALL_PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
               </div>
-            ) : (
-              <button onClick={() => setEditing(true)} style={{ ...styles.editBtn, background: '#4f46e5' }}>Edit Task</button>
-            )}
-          </div>
-        </header>
+            </header>
 
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Description</h2>
-          {editing ? (
-            <textarea ref={descRef} defaultValue={task.description ?? ''}
-              style={{ ...styles.editInput, minHeight: 100, width: '100%', resize: 'vertical' }} />
-          ) : (
-            task.description ? <p style={styles.description}>{task.description}</p> : <p style={{ color: '#999', fontStyle: 'italic' }}>No description</p>
-          )}
-        </section>
+            <section style={styles.section}>
+              <h2 style={styles.sectionTitle}>Description</h2>
+              <textarea name="description" defaultValue={task.description ?? ''}
+                style={{ ...styles.editInput, minHeight: 100, width: '100%', resize: 'vertical' }} />
+            </section>
 
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Details</h2>
-          <dl style={styles.detailList}>
-            <div style={styles.detailRow}>
-              <dt style={styles.detailLabel}>Due Date</dt>
-              <dd style={styles.detailValue}>
-                {editing ? (
-                  <input type="date" ref={dueDateRef} defaultValue={task.dueDate ? task.dueDate.slice(0, 10) : ''}
-                    style={styles.editInput} />
-                ) : (
-                  task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Not set'
-                )}
-              </dd>
+            <section style={styles.section}>
+              <h2 style={styles.sectionTitle}>Details</h2>
+              <dl style={styles.detailList}>
+                <div style={styles.detailRow}>
+                  <dt style={styles.detailLabel}>Due Date</dt>
+                  <dd style={styles.detailValue}>
+                    <input type="date" name="dueDate" defaultValue={task.dueDate ? task.dueDate.slice(0, 10) : ''}
+                      style={styles.editInput} />
+                  </dd>
+                </div>
+                <div style={styles.detailRow}>
+                  <dt style={styles.detailLabel}>Created by</dt>
+                  <dd style={styles.detailValue}>{task.creator?.name ?? task.creator?.email ?? 'Unknown'}</dd>
+                </div>
+                <div style={styles.detailRow}>
+                  <dt style={styles.detailLabel}>Assignees</dt>
+                  <dd style={styles.detailValue}>
+                    {task.assignees && task.assignees.length > 0
+                      ? task.assignees.map((a) => a.name ?? a.email).join(', ')
+                      : 'No assignees'}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
+            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+              <button type="submit" disabled={updateMutation.isPending}
+                style={{ ...styles.editBtn, background: '#22c55e' }}>
+                {updateMutation.isPending ? 'Saving...' : 'Save'}
+              </button>
+              <button type="button" onClick={() => setEditing(false)} style={{ ...styles.editBtn, background: '#9ca3af' }}>Cancel</button>
             </div>
-            <div style={styles.detailRow}>
-              <dt style={styles.detailLabel}>Created by</dt>
-              <dd style={styles.detailValue}>{task.creator?.name ?? task.creator?.email ?? 'Unknown'}</dd>
-            </div>
-            <div style={styles.detailRow}>
-              <dt style={styles.detailLabel}>Assignees</dt>
-              <dd style={styles.detailValue}>
-                {task.assignees && task.assignees.length > 0
-                  ? task.assignees.map((a) => a.name ?? a.email).join(', ')
-                  : 'No assignees'}
-              </dd>
-            </div>
-          </dl>
-        </section>
+          </form>
+        ) : (
+          <>
+            <header style={styles.articleHeader}>
+              <h1 style={styles.taskTitle}>{task.title}</h1>
+              <div style={styles.badges}>
+                <span style={{ ...styles.badge, background: STATUS_COLORS[task.status] ?? '#9ca3af' }}>
+                  {task.status?.replace('_', ' ') ?? 'Unknown'}
+                </span>
+                <span style={{ ...styles.badge, background: PRIORITY_COLORS[task.priority] ?? '#9ca3af' }}>
+                  {task.priority ?? 'No priority'}
+                </span>
+              </div>
+              <div style={{ marginTop: '0.75rem' }}>
+                <button onClick={() => setEditing(true)} style={{ ...styles.editBtn, background: '#4f46e5' }}>Edit Task</button>
+              </div>
+            </header>
+
+            <section style={styles.section}>
+              <h2 style={styles.sectionTitle}>Description</h2>
+              {task.description ? <p style={styles.description}>{task.description}</p> : <p style={{ color: '#999', fontStyle: 'italic' }}>No description</p>}
+            </section>
+
+            <section style={styles.section}>
+              <h2 style={styles.sectionTitle}>Details</h2>
+              <dl style={styles.detailList}>
+                <div style={styles.detailRow}>
+                  <dt style={styles.detailLabel}>Due Date</dt>
+                  <dd style={styles.detailValue}>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Not set'}</dd>
+                </div>
+                <div style={styles.detailRow}>
+                  <dt style={styles.detailLabel}>Created by</dt>
+                  <dd style={styles.detailValue}>{task.creator?.name ?? task.creator?.email ?? 'Unknown'}</dd>
+                </div>
+                <div style={styles.detailRow}>
+                  <dt style={styles.detailLabel}>Assignees</dt>
+                  <dd style={styles.detailValue}>
+                    {task.assignees && task.assignees.length > 0
+                      ? task.assignees.map((a) => a.name ?? a.email).join(', ')
+                      : 'No assignees'}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+          </>
+        )}
 
         <section style={styles.section}>
           <h2 style={styles.sectionTitle}>Assign User</h2>
