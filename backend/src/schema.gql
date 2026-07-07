@@ -3,13 +3,13 @@
 # ------------------------------------------------------
 
 input AssignTaskInput {
+  assigneeIds: [ID!]!
   taskId: ID!
-  userId: ID!
 }
 
 type AuthPayload {
   accessToken: String!
-  user: User!
+  refreshToken: String!
 }
 
 type Comment {
@@ -29,8 +29,8 @@ input CreateCommentInput {
 input CreateTaskInput {
   description: String
   dueDate: DateTime
-  priority: TaskPriority = MEDIUM
-  status: TaskStatus = TODO
+  priority: String = "MEDIUM"
+  status: String = "TODO"
   title: String!
 }
 
@@ -39,24 +39,24 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+input DeleteTaskInput {
+  taskId: ID!
+}
+
 input LoginInput {
   email: String!
   password: String!
 }
 
 type Mutation {
-  addComment(input: CreateCommentInput!): Comment!
+  addComment(input: CreateCommentInput!): Task!
   assignTask(input: AssignTaskInput!): Task!
   createTask(input: CreateTaskInput!): Task!
-  deleteTask(id: ID!): Boolean!
+  deleteTask(input: DeleteTaskInput!): Boolean!
   fillSeed: SeedResult!
   login(input: LoginInput!): AuthPayload!
-  register(input: RegisterInput!): AuthPayload!
+  register(input: RegisterInput!): Boolean!
   updateTask(input: UpdateTaskInput!): Task!
-}
-
-type NewCommentPayload {
-  newComment: Comment!
 }
 
 input PaginationInput {
@@ -66,9 +66,9 @@ input PaginationInput {
 
 type Query {
   me: User!
-  task(id: ID!): Task!
+  task(taskId: String!): Task!
   tasks(filter: TaskFilterInput, pagination: PaginationInput): TaskPage!
-  users: [User!]!
+  users(input: UsersFilterInput): [User!]!
 }
 
 input RegisterInput {
@@ -84,9 +84,9 @@ type SeedResult {
 }
 
 type Subscription {
-  newComment: NewCommentPayload!
-  taskAssigned: TaskAssignedPayload!
-  taskUpdated: TaskUpdatedPayload!
+  taskAssigned: TaskNotificationOutput!
+  taskNewComment: TaskNotificationOutput!
+  taskUpdated: TaskNotificationOutput!
 }
 
 type Task {
@@ -97,50 +97,37 @@ type Task {
   description: String
   dueDate: DateTime
   id: ID!
-  priority: TaskPriority!
-  status: TaskStatus!
+  priority: String!
+  status: String!
   title: String!
   updatedAt: DateTime!
 }
 
-type TaskAssignedPayload {
-  taskAssigned: Task!
-}
-
 input TaskFilterInput {
   dueDate: DateTime
-  priority: TaskPriority
-  status: TaskStatus
+  priority: String
+  status: String
+}
+
+type TaskNotificationOutput {
+  eventAuthorId: ID!
+  eventType: String!
+  taskId: ID!
 }
 
 type TaskPage {
-  items: [Task!]!
+  data: [Task!]!
+  limit: Int!
+  page: Int!
   total: Int!
-}
-
-enum TaskPriority {
-  HIGH
-  LOW
-  MEDIUM
-}
-
-enum TaskStatus {
-  CANCELLED
-  DONE
-  IN_PROGRESS
-  TODO
-}
-
-type TaskUpdatedPayload {
-  taskUpdated: Task!
 }
 
 input UpdateTaskInput {
   description: String
   dueDate: DateTime
-  id: ID!
-  priority: TaskPriority
-  status: TaskStatus
+  priority: String
+  status: String
+  taskId: ID!
   title: String
 }
 
@@ -150,4 +137,10 @@ type User {
   id: ID!
   name: String!
   updatedAt: DateTime!
+}
+
+input UsersFilterInput {
+  limit: Int = 10
+  name: String
+  page: Int = 1
 }

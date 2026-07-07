@@ -29,7 +29,7 @@ export class TaskTypeormEntity {
   @Column({ length: 200, type: 'varchar' })
   title: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @ApiProperty({ required: false })
   @Column({ nullable: true, type: 'varchar' })
   description: string | null;
@@ -44,7 +44,7 @@ export class TaskTypeormEntity {
   @Column({ type: 'varchar', enum: TaskPriority, default: TaskPriority.MEDIUM })
   priority: TaskPriority;
 
-  @Field({ nullable: true })
+  @Field(() => Date, { nullable: true })
   @ApiProperty({ required: false })
   @Column({ nullable: true, type: 'timestamp' })
   dueDate: Date | null;
